@@ -11,6 +11,6 @@ output:
 
 This is the github for the initial Tempus data analysis. 
 
-Data analysis available here: 
+Data analysis available here: https://parajago.github.io/Tempus/Tempus.html
 
 Google doc for abstract for ASCO 2019 available here: 
