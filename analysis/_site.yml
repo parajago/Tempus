@@ -1,20 +1,20 @@
-name: "Tempus"
+name: "Tempus Project"
 output_dir: "../docs"
 navbar:
-  title: "Tempus"
+  title: "Tempus 2019 Data Analysis"
   left:
     - text: "Home"
       href: index.html
-    - text: "About"
-      href: about.html
-    - text: "License"
-      href: license.html
+    - text: "Tempus Data Analysis"
+      href: Tempus.html
   right:
     - icon: fa-github
-      href: https://github.com/jdblischak/workflowr
+      href:
 output:
   workflowr::wflow_html:
+    df_print: paged
     toc: true
     toc_float: true
-    theme: cosmo
+    theme: spacelab
     highlight: textmate
+---

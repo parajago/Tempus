@@ -1,9 +1,16 @@
 ---
-title: "Home"
+title: "Tempus Project"
 site: workflowr::wflow_site
 output:
   workflowr::wflow_html:
-    toc: false
+    df_print: paged
+    toc: true
+    theme: spacelab
+    highlight: textmate
 ---
 
-Welcome to my research website.
+This is the github for the initial Tempus data analysis. 
+
+Data analysis available here: 
+
+Google doc for abstract for ASCO 2019 available here: 
