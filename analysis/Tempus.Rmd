@@ -343,6 +343,24 @@ summary(mylogit)
 ```
 Younger patients in general were more likely to do worse in this study. We did not see a a statistically significant difference in the distribution of genes in the younger patients relative to the older patients (for the top 5 genes). In a logistic regression, while overall gene counts did not make a difference, age at diagnosis could be accounted for separately from stage. 
 
+```{r Neoadjuvant patients}
+tempusneo <- tempusmergedupclean %>% filter(tempusmergedupclean$neoadj==1 & !(StudyID=="MB-0138") & !(StudyID=="MB-1020") & !(StudyID=="MB-1049"))
+
+kable(table(tempusneo$recurrenceposneg), caption = "Neoadjuvant patients who experienced recurrence", col.names=c("Recurrence", "Freq"))
+kable(table(tempusneo$vitalstatus), caption = "Neoadjuvant patients who experienced recurrence", col.names=c("Recurrence", "Freq"))
+
+neoadjTP53<- tempusneo[,"TP53"]
+neoadjTP53 <- ifelse (!(neoadjTP53==""), 1, 0)
+
+surv_object <- Surv(time = tempusneo$timefu, event = tempusneo$vitalstatus)
+fit1<- survfit(Surv(tempusneo$TMB) ~ vitalstatus, data = tempusneo)
+ggsurvplot(fit1, pval=TRUE)
+
+mylogit <- glm(tempusneo$vitalstatus ~ tempusneo$genecount + tempusneo$TMB + tempusneo$age_at_diagnosis + tempusneo$race + tempusneo$stage14, data = tempusneo, family = "binomial")
+summary(mylogit)
+```
+
+
 ```{r Pending analyses}
 #Greater exploration of discrepancies in mutation status and subtype assignment
 #Residual disease after chemotherapy and assessment of mutation changes here 
