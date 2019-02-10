@@ -8,7 +8,7 @@ output:
     theme: spacelab
     highlight: textmate
 ---
-
+#Data structure and format
 ```{r Database setup, message=FALSE, echo=FALSE, results='asis', warning=FALSE, echo=FALSE, include=FALSE}
 knitr::opts_chunk$set
 knitr::kable
@@ -16,103 +16,211 @@ knitr::kable
 setwd("~/Research-Local/Tempus-Local/Tempus")
 library(tidyr)
 library(dplyr)
+library(knitr)
 library(ggplot2)
-tempusclinical <- as.data.frame(read.csv(file="~/Research-Local/Tempus-Local/Input/ChicagoMultiethnic_clinical_2019Feb05.csv", header=TRUE, sep=","))
+tempusclinical <- as.data.frame(read.csv(file="~/Research-Local/Tempus-Local/Input/ChicagoMultiethnic_clinical_2019Feb05.csv", header=TRUE, sep=",")) #127 patients
 tempusmutation <- as.data.frame(read.csv(file="~/Research-Local/Tempus-Local/Input/TempusReportDataset-2019Feb1_Final_mutation.csv", header=TRUE, sep=","))
-tempusreports <- as.data.frame(read.csv(file="~/Research-Local/Tempus-Local/Input/TempusReportDataset-2019Feb1_Final_report.csv", header=TRUE, sep=","))
+tempusreports <- as.data.frame(read.csv(file="~/Research-Local/Tempus-Local/Input/TempusReportDataset-2019Feb1_Final_report.csv", header=TRUE, sep=",")) #139 reports = 8 lymph nodes + 4 patients without clinical information
+tempusmutation <- tempusmutation %>% group_by(StudyID, AccessionNo) %>% mutate(genecount = n_distinct(Gene))
+tempusmutation <- tempusmutation %>% group_by(StudyID, AccessionNo, Gene) %>%mutate(variantcount = seq_along(Gene))
 tempusmutationtemp <- tempusmutation # saving the original mutation data and using a copy table to make modifications
 ```
 
-Raw code for formatting the data. (Actively in progress)
 ```{r Formatting the mutation data for merging}
-#QC CHECK: Check for patients with multiple p53 mutations in the same tumor to make sure that these carry over correctly
-#qccheck <- tempusmutation %>% filter(Gene %in% "TP53") %>% select("StudyID", "AccessionNo", "Tumorspecimen", "variant_name_C")
-#qccheck %>% filter(duplicated(StudyID) | duplicated(StudyID, fromLast = TRUE))
+tempusmutationtemp$GeneInfo <- paste (tempusmutationtemp$variantcount, tempusmutationtemp$variant_name_C, tempusmutationtemp$variant_name_P, tempusmutationtemp$NM_number, tempusmutationtemp$typeofvariant, tempusmutationtemp$VAF, tempusmutationtemp$COSMICCases, sep='\t') # combines variant-specific variables into a temporary column for now
 
-tempusmutationtemp$GeneInfo <- paste ("vartype", tempusmutationtemp$variant_name_C, tempusmutationtemp$variant_name_P, tempusmutationtemp$NM_number, tempusmutationtemp$typeofvariant, tempusmutationtemp$VAF, tempusmutationtemp$COSMICCases, sep="\t") # combines variant-specific variables into a temporary column for now
-tempusmutationtemp <- dplyr::select(tempusmutationtemp, -c(biologicalmeaning, variant_name_C, variant_name_P, NM_number, typeofvariant, VAF, COSMICCases, Notes)) #drops excess columns for merge purposes
-tempusmutationtemp <- tempusmutationtemp %>% spread(Gene,GeneInfo) #Creates individual columns for each gene with the Gene Information as the value
+tempusmutationtemp <- tempusmutationtemp %>% group_by(StudyID, AccessionNo) %>%mutate(maxvariantcount = max(variantcount))
+
+tempusmutationtemp <- dplyr::select(tempusmutationtemp, -c(biologicalmeaning, variant_name_C, variant_name_P, NM_number, typeofvariant, VAF, COSMICCases, variantcount, Notes)) #drops excess columns for merge purposes
+
+tempusmutationtemp <- tempusmutationtemp %>% spread(Gene,GeneInfo) #Creates individual columns for each gene with the Gene Information as the value, every variant has its own row
+
 tempusmutationtemp$V1=NULL #Clears artificial columns that were created in the process of formatting the dataset
 tempusmutationtemp$X=NULL
-tempusmutationtemp <- tempusmutationtemp %>% group_by(StudyID, AccessionNo, PanelName, Normalspecimen, Normalcollecteddate, Normalreceiveddate, Tumorspecimen, Tumorcollecteddate, Tumorreceiveddate, TumorPercentage, TumorMutationalBurden, PercentileTumorMutationalBurd, MicrosatelliteInstabilityStatu, DateSigned) %>% summarise_all(funs(toString(na.omit(.), sep="\t"))) #This flattens all of the rows -> RIGHT NOW each patient is on one line and multiple mutations for the same gene are in one entry as are their variant information for ease of merge
 
-#QC CHECK: Check for patients with multiple p53 mutations in the same tumor to make sure that these carry over correctly 
-#qccheck2 <- tempusmutationtemp %>% filter(!TP53 %in% c("")) %>% select("StudyID", "AccessionNo", "Tumorspecimen", "TP53")
+tempusmutationtemp <- tempusmutationtemp %>% group_by(StudyID, AccessionNo, PanelName, Normalspecimen, Normalcollecteddate, Normalreceiveddate, Tumorspecimen, Tumorcollecteddate, Tumorreceiveddate, TumorPercentage, TumorMutationalBurden, PercentileTumorMutationalBurd, MicrosatelliteInstabilityStatu, DateSigned, genecount, maxvariantcount) %>% summarise_all(funs(toString(na.omit(.), sep='\t'))) #This flattens all of the rows -> RIGHT NOW each patient is on one line and multiple mutations for the same gene are in one entry as are their variant information for ease of merge
 
-tempusmerge <- merge (tempusclinical, tempusmutationtemp, by="StudyID", all=TRUE, sort=FALSE)
+tempusmerge <- merge (tempusclinical, tempusmutationtemp, by="StudyID", all.x=TRUE, all.y=FALSE, sort=FALSE) #Merging the clinical and mutational data into one database, reports are excluded if they do not have clinical information
+```
 
-#Converting the variant information into a a list is in progress but this should be completed shortly. 
-#countcol=1
-#while(countcol < ncol(tempusmerge)) {
-#  countrow=1
-#  while (countrow < nrow(tempusmerge)){
-#    if (grepl("vartype", tempusmerge[countrow, countcol])){
-#      tempstring=toString(tempusmerge[countrow, countcol])
-#      templist <- as.list(unlist(strsplit(tempstring, split="vartype\t")))
-      #tempusmerge[countrow,countcol] 
-#      print(length(templist))
+```{r Additional formatting code, message=FALSE, echo=FALSE, results='asis', warning=FALSE, echo=FALSE, include=FALSE}
+#If variant information needs to be extracted
+#countcol=ncol(tempusreports)+1
+#while(countcol <= ncol(tempusmutationtemp2)) {
+#  countrow=2
+#  while (countrow <= nrow(tempusmutationtemp2)){
+#    if (!(tempusmutationtemp2[countrow,countcol]=="")==TRUE){
+#        tempvar <- tempusmutationtemp2[countrow,countcol]
+#        templist <- gsub(",", "\t", tempvar)
+#        templist <- as.list(strsplit(templist, "\t")[[1]])
+#        #list needs to be stored to a different variable 
 #    }
-#    countrow=countrow+1
+#  countrow=countrow+1
 #  }
 #  countcol=countcol+1
 #}
-#qccheck3 <- tempusmerge %>% filter(!TP53 %in% c("")) %>% select("StudyID", "AccessionNo", "Tumorspecimen", "TP53")
 ```
 
-#Summary characteristics between data sets
+#Data cleaning/new variable generation
+```{r Data cleaning}
+tempusmerge$age50 <- ifelse(tempusmerge$age_at_diagnosis < 50, 1, 0) #binary variable for age < 50 (which equals 1)
+tempusmerge$neoadj <- ifelse ((as.Date(as.character(tempusmerge$date_surg1), format="%m/%d/%Y")-as.Date(as.character(tempusmerge$date_cx1), format="%m/%d/%Y"))>0, 1, 0) #determining if pts had neoadjuvant chemotherapy
+tempusmerge$HRstatus <- ifelse (tempusmerge$ER=="Pos" | tempusmerge$PR=="Pos", 1, 0) #Hormone-receptor positive status
+tempusmerge$nodeposneg <- ifelse (tempusmerge$RegionalNodePositive>0, 1, 0) #At least one positive lymph node
+tempusmerge$recurrenceposneg <- ifelse (tempusmerge$type1strecurrence=="00 Patient became disease-free after treatment and has not had a recurrence.", 0, 1) #Positive/negative recurrence status alone without differentiation of site. 
+tempusmerge$recurrenceposneg <- ifelse (tempusmerge$type1strecurrence=="99 It is unknown whether the disease has recurred or if the patient was ever disease-free", NA, tempusmerge$recurrenceposneg) #Cleaning unknown recurrence variables from this
+
+tempusmerge$TMB <- as.numeric(tempusmerge$TumorMutationalBurden) #Numeric interpretation of mutational burden
+tempusmerge$genemutshigh <- ifelse (tempusmerge$genecount>25, 1,0) #Patients with a high number of mutated genes as measured by number of unique genes mutated 
+
+tempusmergedupclean <- tempusmerge
+tempusmergedupclean <- tempusmergedupclean[with(tempusmergedupclean, ave(TumorPercentage, StudyID, FUN=max)==TumorPercentage),] #keep duplicates by higher %
+tempusmergedupclean <- tempusmergedupclean[with(tempusmergedupclean, ave(TMB, StudyID, FUN=max)==TMB),] #keep duplicates by higher TMB if same source, %
+```
+
+#Data summary
 We have clinical information for `r length(unique(tempusclinical$StudyID))` patients and mutation information for `r length(unique(tempusreports$StudyID))` patients.
 
-We are missing clinical information for the following 4 patients: 
+We are missing clinical information for the following 4 patients. These are not included in the merged data set. 
 ```{r Clinical missing, echo=FALSE}
 setdiff(tempusreports$StudyID, tempusclinical$StudyID)
 ```
 
-The following patients have two samples (typically primary tumor and lymph node) submitted with the following characteristics: 
-
-```{r Tumor and lymph node present, echo=FALSE}
-tempusreports %>% filter(duplicated(StudyID) | duplicated(StudyID, fromLast = TRUE))
+```{r Mutiple samples present}
+duplicates <- tempusreports %>% filter(duplicated(StudyID) | duplicated(StudyID, fromLast = TRUE)) %>% select(StudyID, AccessionNo, Tumorspecimen, TumorPercentage)
+duplicates
 ```
+`r length(unique(duplicates$StudyID))` patients have duplicate reports (most often primary tumor and lymph node) submitted with the above characteristics. These patients are included in the merged data set but in these cases, for any analysis, we counted each patient individually/once using the specimen that offered the best tumor percentage as relevant.
+
+```{r Lymph nodes only present}
+lymphnodes <- tempusreports %>% filter((Tumorspecimen=="Lymph node") & !(duplicated(StudyID) | duplicated(StudyID, fromLast = TRUE))) %>% select(StudyID, AccessionNo, Tumorspecimen, TumorPercentage)
+lymphnodes
+```
+`r length(unique(lymphnodes$StudyID))` patients have only lymph node submitted. These patients are included in the merged data set and treated as though they had primary tumor (as this was their only tumor specimen). 
 
 #Clinical summary
-All but 1 of the patients are women.
+Low-yield variables: Date and age of enrollment (38 patients), Sex (1 male patient), Insurance (1 patient with unknown insurance, 126 patients insured), Alcohol history (90 patients not reported), gravidity/parity (26 patients reported), menopause (26 patients reported), distant metastatic sites (only 2 sites reported), histology (14 patients with at least partial lobular disease), surgical margin (4 patients with ? residual disease), 2nd primary (only one patient reported)
+
+Variables not incorporated for this analysis: Marital status at diagnosis, breast primary site, laterality, TNM edition and clinical staging, tumorsize, lymphovascularinvasion (64 patients only reported), radiation variables
 
 ```{r Clinical summary, echo=FALSE}
-library(knitr)
-summary(tempusclinical$age_at_diagnosis)
+hist(tempusclinical$age_at_diagnosis)
 ```
-This is the age distribution of patients at time of diagnosis. This population skews young but does have representation throughout the age range. We were not well informed about menopause, with only 25 patients reporting menopausal status and 19 patients reporting etiology of menopause (natural vs artificial). 
+This is the age distribution of patients at time of diagnosis. This population skews young but does have representation throughout the age range. 
 
 ```{r Ongoing clinical summary, echo=FALSE}
-kable(table(tempusmerge$race, tempusmerge$hispanic), caption = "Self-reported races in our cohort (Y/N refers to Hispanic ethnicity)")
-kable(table(tempusmerge$parity), caption = "Number of birthed children")
-kable(table(tempusmerge$vitalstatus), caption = "Alive or dead, status at time of last follow up")
-kable(table(tempusmerge$Stage), caption = "Distribution of analytical stage based on a synthesis of clinical stage and pathological stage information")
-tempusmerge$HRstatus <- grepl("Pos", tempusmerge$ER) | grepl("Pos", tempusmerge$PR)
-kable(table(tempusmerge$HRstatus, tempusmerge$HER2.x), caption="Hormone receptor status (y-axis) vs HER2 status (x-axis)")
-kable(table(tempusmerge$chemotherapy), caption="Recieved any type of chemotherapy")
-kable(table(tempusmerge$radiotherapy), caption="Recieved any type of radiotherapy")
-kable(table(tempusmerge$surgery1), caption="Initial surgery performed at time of diagnosis and initial treatment")
-kable(table(tempusmerge$hormonetherapy), caption="Recieved any type of hormone therapy")
+kable(table(tempusmergedupclean$age50), caption = "Distribution of patients younger than age 50 (with 0 > 50 and 1 < 50")
+kable(table(tempusclinical$race, tempusclinical$hispanic), caption = "Self-reported races in our cohort (Y/N refers to Hispanic ethnicity)")
+kable(table(tempusclinical$tobacco_history), caption = "Tobacco exposure")
+kable(table(tempusclinical$vitalstatus), caption = "Alive or dead status last known")
+kable(table(tempusmergedupclean$nodeposneg), caption = "Fraction of patients with at least one node positive on study")
+kable(table(tempusclinical$Ki67), caption = "Ki67 distribution as known in 116/127 patients")
+kable(table(tempusclinical$Stage), caption = "Distribution of analytical stage based on a synthesis of clinical stage and pathological stage information")
+kable(table(tempusmergedupclean$HRstatus, tempusmergedupclean$HER2.x), caption="Hormone receptor status (y-axis) vs HER2 status (x-axis)")
+kable(table(tempusclinical$chemotherapy), caption="Recieved any type of chemotherapy")
+kable(table(tempusmergedupclean$neoadj), caption="Patients with neoadjuvant therapy")
+kable(table(tempusclinical$radiotherapy), caption="Recieved any type of radiotherapy")
+kable(table(tempusclinical$surgery1), caption="Initial surgery performed at time of diagnosis and initial treatment")
+kable(table(tempusclinical$hormonetherapy), caption="Recieved any type of hormone therapy")
 ```
 
-
-There was not significant information on sites of distant metastases; only two patients were noted to have metastasis at time of diagnosis. 
+Of note, with mutation testing prior to sequencing, we had 1 patient each report a BRCA 1 and BRCA 2 mutation. 
 
 #Mutations summary
+Variables not incorporated for this analysis: Percentile mutational burden (incomplete)
+
 We have representation of `r length(unique(tempusmutation$Gene))` genes with mutations in this data set (including both primary tumors and lymph nodes). The most common mutations were as follows: 
-```{r Mutation summary, echo=FALSE}
+```{r Mutation summary and tumor purity, echo=FALSE}
 head(summary(tempusmutation$Gene), 10)
+hist(tempusmergedupclean$TumorPercentage, main="Distribution of purity of tumor samples")
+```
+This is the tumor purity distribution of patients at time of diagnosis. 30% purity is conisdered sufficient to perform MSI testing, for example. 104 of our 127 samples met this criteria. 
 
-kable(table(tempusmerge$TumorPercentage), caption="Distribution of tumor purity from samples")
-kable(table(tempusmerge$TumorMutationalBurden), caption="Distribution of tumor mutational burden")
-kable(table(tempusmerge$MicrosatelliteInstabilityStatu), caption="Distribution of MSI status")
-kable(table(tempusmutation$typeofvariant), caption="Distribution of variant types across all mutations")
+```{r Ongoing mutational summary, echo=FALSE}
+summary(tempusmergedupclean$TMB)
+hist(tempusmergedupclean$TMB, main="Distribution of tumor mutational burden")
+```
+Only 88 of 139 reports contained percentile information. 
+
+```{r Ongoing mutational summary-2, echo=FALSE}
+kable(table(tempusmergedupclean$MicrosatelliteInstabilityStatu), caption="Distribution of MSI status")
+kable(sort(table(tempusmutation$typeofvariant), decreasing=TRUE), caption="Distribution of variant types across all mutations")
+```
+Missense variants, splice region variants, stop gains and copy number gains/losses were the best represented in our cohort. 
+
+
+#Exploring what mutation distribution means from a clinical standpoint
+```{r Mutation distribution per patient-1}
+summary(tempusmergedupclean$genecount)
+table(tempusmergedupclean$genecount>25)
+hist(tempusmergedupclean$genecount, main="Distribution of uniquely mutated genes per patient sample")
+hist(tempusmergedupclean$maxvariantcount, main="Distribution of highest number of variants\n for a single gene per patient sample")
+hist(tempusmergedupclean$TMB, main="Distribution of tumor mutational burden (as measured by Tempus)")
+```
+We see a long tail towards the right in terms of frequency of uniquely mutated genes, number of variants for a single gene and TMB. However, these do not clearly correlate in a linear distribution. 
+
+```{r Mutation distribution per patient-2}
+ggplot()+
+  geom_line(data=tempusmergedupclean, aes(x=tempusmergedupclean$TMB, y=tempusmergedupclean$maxvariantcount), size=1, color="red")+
+  geom_line(data=tempusmergedupclean, aes(x=tempusmergedupclean$TMB, y=tempusmergedupclean$genecount), size=1, color="blue")
+```
+There are peaks and valleys with rising TMB in which gene count and max variant count (per gene) correlate to each other, but these do not increase in a completely linear fashion.
+
+```{r Mutation distribution per patient-3}
+chisq.test((tempusmergedupclean$genecount>12), tempusmergedupclean$recurrenceposneg)
+
+chisq.test((tempusmergedupclean$maxvariantcount>2), tempusmergedupclean$recurrenceposneg)
+
+chisq.test((tempusmergedupclean$TMB>3), tempusmergedupclean$recurrenceposneg)
+```
+Using the Chi-squared test, there was an association between tumor mutational burden as measured by Tempus and recurrence at all, but not using number of genes mutated (above the mean) or maximum number of variants for a single gene (above the mean). 
+
+```{r Look at characteristics of extreme patients}
+
 ```
 
-We did not appear to have an unusual distribution of TMB or MSI status at the outset of sequencing. Missense variants, splice region variants, stop gains and copy number gains/losses were the best represented in our cohort. 
-
-#Interactions between mutations and clinical status
-```{r}
+```{r Lymph node differences relative to primary tumor}
 
 ```
 
+```{r Heterogeneity in the same tumor}
+
+```
+
+```{r Are there differences in most commonly mutated genes across racial / other groups? Or frequency/type of variants?}
+
+```
+
+```{r How do mutation types affect outcomes?}
+#Do copy number changes and splice variants affect outcome
+```
+
+```{r Look more deeply at HER2 and HRstatus discrepancies}
+#HER2 and HRstatus discrepanies
+#HER2 + but 19 copy number change in total (discrepancy between how patients were treated and longterm) 
+
+#kable(table(tempusmerge$HRstatus[unique(tempusmerge$StudyID)], tempusmerge$hormonetherapy[unique(tempusmerge$StudyID)]), caption="Fraction of patients who received hormone therapy relative to having hormone receptor status positive disease - 15 patients did not get hormone therapy when they did have hormone receptor positive disease reportedly")
+
+```
+
+```{r Mutation distribution in patients < 50}
+```
+
+```{r Associate neoadjuvatn therapy with mutation characteristics}
+#Neoadjuvant characteristic as attribute -> look at patterns of response based on mutations (ER+ / ER-) take out HER2+ 
+```
+
+```{r Associate subtype with mutation characteristics}
+#For triple negative patients, see if there is residual disease after chemotherapy?
+#Look at what mutations predict response if neoadjuvant?
+```
+
+```{r Survival curves based on mutations}
+#Dates of surgery OK to start / enter into the study
+#Alive or dead / date of last f/u
+```
+
+
+```{r Descriptive statistics on patients with multiple variants}
+#sameptsamegenemultivariant <- tempusmutation %>% group_by (StudyID, Gene) %>% filter((duplicated(StudyID) & duplicated(Gene) & duplicated(AccessionNo)) | (duplicated(StudyID, fromLast=TRUE) & duplicated(AccessionNo, fromLast=TRUE) & duplicated(Gene, fromLast=TRUE))) %>% dplyr::select("StudyID", "AccessionNo", "Tumorspecimen", "Gene", "variant_name_C", "variant_name_P", "NM_number", "typeofvariant", "genecount", "variantcount")
+```

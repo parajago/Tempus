@@ -415,7 +415,7 @@ div.section {
 </div>
 
 
-<p><strong>Last updated:</strong> 2019-02-08</p>
+<p><strong>Last updated:</strong> 2019-02-10</p>
 <strong>workflowr checks:</strong> <small>(Click a bullet for more information)</small>
 <ul>
 <li>
@@ -438,7 +438,7 @@ div.section {
 </details>
 </li>
 <li>
-<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> 4a5b17d </summary></p>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> 445bd8d </summary></p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
 <pre><code>
 Ignored files:
@@ -450,6 +450,9 @@ Ignored files:
     Ignored:    data/
     Ignored:    docs/.DS_Store
     Ignored:    output/
+
+Untracked files:
+    Untracked:  docs/figure/
 
 Unstaged changes:
     Modified:   analysis/Tempus.Rmd
@@ -481,6 +484,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align:left;">
+Rmd
+</td>
+<td style="text-align:left;">
+445bd8d
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-02-08
+</td>
+<td style="text-align:left;">
+analysis 1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+html
+</td>
+<td style="text-align:left;">
+445bd8d
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-02-08
+</td>
+<td style="text-align:left;">
+analysis 1
+</td>
+</tr>
 <tr>
 <td style="text-align:left;">
 html
@@ -554,57 +591,85 @@ start site
 </ul>
 <p></details></p>
 <hr />
-<p>Raw code for formatting the data. (Actively in progress)</p>
-<pre class="r"><code>#QC CHECK: Check for patients with multiple p53 mutations in the same tumor to make sure that these carry over correctly
-#qccheck &lt;- tempusmutation %&gt;% filter(Gene %in% &quot;TP53&quot;) %&gt;% select(&quot;StudyID&quot;, &quot;AccessionNo&quot;, &quot;Tumorspecimen&quot;, &quot;variant_name_C&quot;)
-#qccheck %&gt;% filter(duplicated(StudyID) | duplicated(StudyID, fromLast = TRUE))
+<div id="data-structure-and-format" class="section level1">
+<h1>Data structure and format</h1>
+<pre class="r"><code>tempusmutationtemp$GeneInfo &lt;- paste (tempusmutationtemp$variantcount, tempusmutationtemp$variant_name_C, tempusmutationtemp$variant_name_P, tempusmutationtemp$NM_number, tempusmutationtemp$typeofvariant, tempusmutationtemp$VAF, tempusmutationtemp$COSMICCases, sep=&#39;\t&#39;) # combines variant-specific variables into a temporary column for now
 
-tempusmutationtemp$GeneInfo &lt;- paste (&quot;vartype&quot;, tempusmutationtemp$variant_name_C, tempusmutationtemp$variant_name_P, tempusmutationtemp$NM_number, tempusmutationtemp$typeofvariant, tempusmutationtemp$VAF, tempusmutationtemp$COSMICCases, sep=&quot;\t&quot;) # combines variant-specific variables into a temporary column for now
-tempusmutationtemp &lt;- dplyr::select(tempusmutationtemp, -c(biologicalmeaning, variant_name_C, variant_name_P, NM_number, typeofvariant, VAF, COSMICCases, Notes)) #drops excess columns for merge purposes
-tempusmutationtemp &lt;- tempusmutationtemp %&gt;% spread(Gene,GeneInfo) #Creates individual columns for each gene with the Gene Information as the value
+tempusmutationtemp &lt;- tempusmutationtemp %&gt;% group_by(StudyID, AccessionNo) %&gt;%mutate(maxvariantcount = max(variantcount))
+
+tempusmutationtemp &lt;- dplyr::select(tempusmutationtemp, -c(biologicalmeaning, variant_name_C, variant_name_P, NM_number, typeofvariant, VAF, COSMICCases, variantcount, Notes)) #drops excess columns for merge purposes
+
+tempusmutationtemp &lt;- tempusmutationtemp %&gt;% spread(Gene,GeneInfo) #Creates individual columns for each gene with the Gene Information as the value, every variant has its own row
+
 tempusmutationtemp$V1=NULL #Clears artificial columns that were created in the process of formatting the dataset
 tempusmutationtemp$X=NULL
-tempusmutationtemp &lt;- tempusmutationtemp %&gt;% group_by(StudyID, AccessionNo, PanelName, Normalspecimen, Normalcollecteddate, Normalreceiveddate, Tumorspecimen, Tumorcollecteddate, Tumorreceiveddate, TumorPercentage, TumorMutationalBurden, PercentileTumorMutationalBurd, MicrosatelliteInstabilityStatu, DateSigned) %&gt;% summarise_all(funs(toString(na.omit(.), sep=&quot;\t&quot;))) #This flattens all of the rows -&gt; RIGHT NOW each patient is on one line and multiple mutations for the same gene are in one entry as are their variant information for ease of merge
 
-#QC CHECK: Check for patients with multiple p53 mutations in the same tumor to make sure that these carry over correctly 
-#qccheck2 &lt;- tempusmutationtemp %&gt;% filter(!TP53 %in% c(&quot;&quot;)) %&gt;% select(&quot;StudyID&quot;, &quot;AccessionNo&quot;, &quot;Tumorspecimen&quot;, &quot;TP53&quot;)
+tempusmutationtemp &lt;- tempusmutationtemp %&gt;% group_by(StudyID, AccessionNo, PanelName, Normalspecimen, Normalcollecteddate, Normalreceiveddate, Tumorspecimen, Tumorcollecteddate, Tumorreceiveddate, TumorPercentage, TumorMutationalBurden, PercentileTumorMutationalBurd, MicrosatelliteInstabilityStatu, DateSigned, genecount, maxvariantcount) %&gt;% summarise_all(funs(toString(na.omit(.), sep=&#39;\t&#39;))) #This flattens all of the rows -&gt; RIGHT NOW each patient is on one line and multiple mutations for the same gene are in one entry as are their variant information for ease of merge
 
-tempusmerge &lt;- merge (tempusclinical, tempusmutationtemp, by=&quot;StudyID&quot;, all=TRUE, sort=FALSE)
+tempusmerge &lt;- merge (tempusclinical, tempusmutationtemp, by=&quot;StudyID&quot;, all.x=TRUE, all.y=FALSE, sort=FALSE) #Merging the clinical and mutational data into one database, reports are excluded if they do not have clinical information</code></pre>
+</div>
+<div id="data-cleaningnew-variable-generation" class="section level1">
+<h1>Data cleaning/new variable generation</h1>
+<pre class="r"><code>tempusmerge$age50 &lt;- ifelse(tempusmerge$age_at_diagnosis &lt; 50, 1, 0) #binary variable for age &lt; 50 (which equals 1)
+tempusmerge$neoadj &lt;- ifelse ((as.Date(as.character(tempusmerge$date_surg1), format=&quot;%m/%d/%Y&quot;)-as.Date(as.character(tempusmerge$date_cx1), format=&quot;%m/%d/%Y&quot;))&gt;0, 1, 0) #determining if pts had neoadjuvant chemotherapy
+tempusmerge$HRstatus &lt;- ifelse (tempusmerge$ER==&quot;Pos&quot; | tempusmerge$PR==&quot;Pos&quot;, 1, 0) #Hormone-receptor positive status
+tempusmerge$nodeposneg &lt;- ifelse (tempusmerge$RegionalNodePositive&gt;0, 1, 0) #At least one positive lymph node
+tempusmerge$recurrenceposneg &lt;- ifelse (tempusmerge$type1strecurrence==&quot;00 Patient became disease-free after treatment and has not had a recurrence.&quot;, 0, 1) #Positive/negative recurrence status alone without differentiation of site. 
+tempusmerge$recurrenceposneg &lt;- ifelse (tempusmerge$type1strecurrence==&quot;99 It is unknown whether the disease has recurred or if the patient was ever disease-free&quot;, NA, tempusmerge$recurrenceposneg) #Cleaning unknown recurrence variables from this
 
-#Converting the variant information into a a list is in progress but this should be completed shortly. 
-#countcol=1
-#while(countcol &lt; ncol(tempusmerge)) {
-#  countrow=1
-#  while (countrow &lt; nrow(tempusmerge)){
-#    if (grepl(&quot;vartype&quot;, tempusmerge[countrow, countcol])){
-#      tempstring=toString(tempusmerge[countrow, countcol])
-#      templist &lt;- as.list(unlist(strsplit(tempstring, split=&quot;vartype\t&quot;)))
-      #tempusmerge[countrow,countcol] 
-#      print(length(templist))
-#    }
-#    countrow=countrow+1
-#  }
-#  countcol=countcol+1
-#}
-#qccheck3 &lt;- tempusmerge %&gt;% filter(!TP53 %in% c(&quot;&quot;)) %&gt;% select(&quot;StudyID&quot;, &quot;AccessionNo&quot;, &quot;Tumorspecimen&quot;, &quot;TP53&quot;)</code></pre>
-<div id="summary-characteristics-between-data-sets" class="section level1">
-<h1>Summary characteristics between data sets</h1>
+tempusmerge$TMB &lt;- as.numeric(tempusmerge$TumorMutationalBurden) #Numeric interpretation of mutational burden
+tempusmerge$genemutshigh &lt;- ifelse (tempusmerge$genecount&gt;25, 1,0) #Patients with a high number of mutated genes as measured by number of unique genes mutated 
+
+tempusmergedupclean &lt;- tempusmerge
+tempusmergedupclean &lt;- tempusmergedupclean[with(tempusmergedupclean, ave(TumorPercentage, StudyID, FUN=max)==TumorPercentage),] #keep duplicates by higher %
+tempusmergedupclean &lt;- tempusmergedupclean[with(tempusmergedupclean, ave(TMB, StudyID, FUN=max)==TMB),] #keep duplicates by higher TMB if same source, %</code></pre>
+</div>
+<div id="data-summary" class="section level1">
+<h1>Data summary</h1>
 <p>We have clinical information for 127 patients and mutation information for 131 patients.</p>
-<p>We are missing clinical information for the following 4 patients:</p>
+<p>We are missing clinical information for the following 4 patients. These are not included in the merged data set.</p>
 <pre><code>[1] &quot;PN0118&quot; &quot;PN0124&quot; &quot;PN0153&quot; &quot;PN0155&quot;</code></pre>
-<p>The following patients have two samples (typically primary tumor and lymph node) submitted with the following characteristics:</p>
+<pre class="r"><code>duplicates &lt;- tempusreports %&gt;% filter(duplicated(StudyID) | duplicated(StudyID, fromLast = TRUE)) %&gt;% select(StudyID, AccessionNo, Tumorspecimen, TumorPercentage)
+duplicates</code></pre>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
-{"columns":[{"label":["X"],"name":[1],"type":["int"],"align":["right"]},{"label":["StudyID"],"name":[2],"type":["fctr"],"align":["left"]},{"label":["AccessionNo"],"name":[3],"type":["fctr"],"align":["left"]},{"label":["PanelName"],"name":[4],"type":["fctr"],"align":["left"]},{"label":["Normalspecimen"],"name":[5],"type":["fctr"],"align":["left"]},{"label":["Normalcollecteddate"],"name":[6],"type":["fctr"],"align":["left"]},{"label":["Normalreceiveddate"],"name":[7],"type":["fctr"],"align":["left"]},{"label":["Tumorspecimen"],"name":[8],"type":["fctr"],"align":["left"]},{"label":["Tumorcollecteddate"],"name":[9],"type":["fctr"],"align":["left"]},{"label":["Tumorreceiveddate"],"name":[10],"type":["fctr"],"align":["left"]},{"label":["TumorPercentage"],"name":[11],"type":["dbl"],"align":["right"]},{"label":["TumorMutationalBurden"],"name":[12],"type":["fctr"],"align":["left"]},{"label":["PercentileTumorMutationalBurd"],"name":[13],"type":["dbl"],"align":["right"]},{"label":["MicrosatelliteInstabilityStatu"],"name":[14],"type":["fctr"],"align":["left"]},{"label":["DateSigned"],"name":[15],"type":["fctr"],"align":["left"]},{"label":["Notes"],"name":[16],"type":["fctr"],"align":["left"]}],"data":[{"1":"41","2":"PN0139","3":"TL-18-1FFA96","4":"xT 595 Genes","5":"FFPE","6":"10/24/1997","7":"9/7/2018","8":"Breast","9":"10/24/1997","10":"9/7/2018","11":"0.2","12":"2.1 m/MB","13":"40","14":"MSI can not be assessed because the tumor content is below 30%.","15":"11/2/2018","16":""},{"1":"42","2":"PN0139","3":"TL-18-4BC15A","4":"xT 595 Genes","5":"FFPE","6":"10/24/1997","7":"9/7/2018","8":"Lymph node","9":"10/24/1997","10":"9/7/2018","11":"0.5","12":"3.3 m/MB","13":"66","14":"Stable","15":"11/2/2018","16":""},{"1":"46","2":"PN0198","3":"TL-18-200CF9","4":"xT 595 Genes","5":"FFPE","6":"9/29/1999","7":"9/7/2018","8":"Breast","9":"9/29/1999","10":"9/7/2018","11":"0.6","12":"2.1 m/MB","13":"40","14":"Stable","15":"11/2/2018","16":""},{"1":"47","2":"PN0198","3":"TL-18-C9E469","4":"xT 595 Genes","5":"FFPE","6":"9/29/1999","7":"9/7/2018","8":"Lymph node","9":"9/29/1999","10":"9/7/2018","11":"0.5","12":"2.5 m/MB","13":"50","14":"Stable","15":"11/2/2018","16":""},{"1":"49","2":"PN0264","3":"TL-18-25A755","4":"xT 595 Genes","5":"Extracted DNA","6":"","7":"9/7/2018","8":"","9":"5/11/2001","10":"9/7/2018","11":"0.3","12":"7.5 m/MB","13":"89","14":"Stable","15":"11/2/2018","16":""},{"1":"50","2":"PN0264","3":"TL-18-18EB33","4":"xT 595 Genes","5":"Extracted DNA","6":"","7":"9/7/2018","8":"","9":"5/11/2001","10":"9/7/2018","11":"0.2","12":"5.0 m/MB","13":"81","14":"MSI can not be assessed because the tumor content is below 30%.","15":"11/2/2018","16":""},{"1":"82","2":"PN0145","3":"TL-18-12B92C","4":"xT 595 Genes","5":"FFPE","6":"3/4/1998","7":"9/7/2018","8":"Breast","9":"3/4/1998","10":"9/7/2018","11":"0.4","12":"5.4 m/MB","13":"83","14":"Stable","15":"11/2/2018","16":""},{"1":"83","2":"PN0145","3":"TL-18-CDF9A7","4":"xT 595 Genes","5":"FFPE","6":"3/4/1998","7":"9/7/2018","8":"Lymph node","9":"3/4/1998","10":"9/7/2018","11":"0.4","12":"0.4 m/MB","13":"6","14":"Stable","15":"11/2/2018","16":""},{"1":"85","2":"PN0129","3":"TL-18-2F1FB7","4":"xT 595 Genes","5":"FFPE","6":"6/18/1997","7":"9/7/2018","8":"Breast","9":"6/18/1997","10":"9/7/2018","11":"0.9","12":"2.5 m/MB","13":"50","14":"Stable","15":"11/2/2018","16":""},{"1":"86","2":"PN0129","3":"TL-18-9BFB83","4":"xT 595 Genes","5":"FFPE","6":"6/18/1997","7":"9/7/2018","8":"Lymph node","9":"6/18/1997","10":"9/7/2018","11":"0.2","12":"1.7 m/MB","13":"30","14":"MSI can not be assessed because the tumor content is below 30%.","15":"11/2/2018","16":""},{"1":"87","2":"PN0221","3":"TL-18-CE9403","4":"xT 595 Genes","5":"Extracted DNA","6":"","7":"9/7/2018","8":"Lymph node","9":"","10":"9/7/2018","11":"0.2","12":"0.0 m/MB","13":"1","14":"MSI can not be assessed because the tumor content is below 30%.","15":"11/2/2018","16":""},{"1":"88","2":"PN0221","3":"TL-18-CD4FA2","4":"xT 595 Genes","5":"Extracted DNA","6":"","7":"9/7/2018","8":"Breast","9":"12/5/2003","10":"9/7/2018","11":"0.6","12":"2.9 m/MB","13":"59","14":"Stable","15":"11/2/2018","16":""},{"1":"102","2":"PN0147","3":"TL-18-213530","4":"xT 595 Genes","5":"FFPE","6":"4/7/1998","7":"9/7/2018","8":"Breast","9":"4/7/1998","10":"9/7/2018","11":"0.6","12":"30.4 m/MB","13":"98","14":"Equivocal","15":"12/14/2018","16":""},{"1":"103","2":"PN0147","3":"TL-19-85F69C","4":"xT 595 Genes","5":"FFPE","6":"4/7/1998","7":"9/7/2018","8":"Lymph node","9":"4/7/1998","10":"9/7/2018","11":"0.4","12":"0.4 m/MB","13":"6","14":"Stable","15":"01/14/2019","16":""},{"1":"132","2":"PN0263","3":"TL-18-56509D","4":"xT 595 Genes","5":"Extracted DNA","6":"","7":"9/7/2018","8":"Breast","9":"5/4/2001","10":"9/7/2018","11":"0.6","12":"13.3 m/MB","13":"94","14":"Stable","15":"12/05/2018","16":""},{"1":"133","2":"PN0263","3":"TL-18-8A2A03","4":"xT 595 Genes","5":"Extracted DNA","6":"","7":"9/7/2018","8":"Breast","9":"5/4/2001","10":"9/7/2018","11":"0.6","12":"23.3 m/MB","13":"97","14":"Stable","15":"12/05/2018","16":""}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":["StudyID"],"name":[1],"type":["fctr"],"align":["left"]},{"label":["AccessionNo"],"name":[2],"type":["fctr"],"align":["left"]},{"label":["Tumorspecimen"],"name":[3],"type":["fctr"],"align":["left"]},{"label":["TumorPercentage"],"name":[4],"type":["dbl"],"align":["right"]}],"data":[{"1":"PN0139","2":"TL-18-1FFA96","3":"Breast","4":"0.2"},{"1":"PN0139","2":"TL-18-4BC15A","3":"Lymph node","4":"0.5"},{"1":"PN0198","2":"TL-18-200CF9","3":"Breast","4":"0.6"},{"1":"PN0198","2":"TL-18-C9E469","3":"Lymph node","4":"0.5"},{"1":"PN0264","2":"TL-18-25A755","3":"","4":"0.3"},{"1":"PN0264","2":"TL-18-18EB33","3":"","4":"0.2"},{"1":"PN0145","2":"TL-18-12B92C","3":"Breast","4":"0.4"},{"1":"PN0145","2":"TL-18-CDF9A7","3":"Lymph node","4":"0.4"},{"1":"PN0129","2":"TL-18-2F1FB7","3":"Breast","4":"0.9"},{"1":"PN0129","2":"TL-18-9BFB83","3":"Lymph node","4":"0.2"},{"1":"PN0221","2":"TL-18-CE9403","3":"Lymph node","4":"0.2"},{"1":"PN0221","2":"TL-18-CD4FA2","3":"Breast","4":"0.6"},{"1":"PN0147","2":"TL-18-213530","3":"Breast","4":"0.6"},{"1":"PN0147","2":"TL-19-85F69C","3":"Lymph node","4":"0.4"},{"1":"PN0263","2":"TL-18-56509D","3":"Breast","4":"0.6"},{"1":"PN0263","2":"TL-18-8A2A03","3":"Breast","4":"0.6"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
+<p>8 patients have duplicate reports (most often primary tumor and lymph node) submitted with the above characteristics. These patients are included in the merged data set but in these cases, for any analysis, we counted each patient individually/once using the specimen that offered the best tumor percentage as relevant.</p>
+<pre class="r"><code>lymphnodes &lt;- tempusreports %&gt;% filter((Tumorspecimen==&quot;Lymph node&quot;) &amp; !(duplicated(StudyID) | duplicated(StudyID, fromLast = TRUE))) %&gt;% select(StudyID, AccessionNo, Tumorspecimen, TumorPercentage)
+lymphnodes</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["StudyID"],"name":[1],"type":["fctr"],"align":["left"]},{"label":["AccessionNo"],"name":[2],"type":["fctr"],"align":["left"]},{"label":["Tumorspecimen"],"name":[3],"type":["fctr"],"align":["left"]},{"label":["TumorPercentage"],"name":[4],"type":["dbl"],"align":["right"]}],"data":[{"1":"PN0162","2":"TL-18-BDD8C3","3":"Lymph node","4":"0.20"},{"1":"PN0217","2":"TL-18-DD82EF","3":"Lymph node","4":"0.20"},{"1":"PN0255","2":"TL-18-5E23D5","3":"Lymph node","4":"0.85"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<p>3 patients have only lymph node submitted. These patients are included in the merged data set and treated as though they had primary tumor (as this was their only tumor specimen).</p>
 </div>
 <div id="clinical-summary" class="section level1">
 <h1>Clinical summary</h1>
-<p>All but 1 of the patients are women.</p>
-<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-  24.00   43.00   51.00   53.23   63.50   88.00 </code></pre>
-<p>This is the age distribution of patients at time of diagnosis. This population skews young but does have representation throughout the age range. We were not well informed about menopause, with only 25 patients reporting menopausal status and 19 patients reporting etiology of menopause (natural vs artificial).</p>
+<p>Low-yield variables: Date and age of enrollment (38 patients), Sex (1 male patient), Insurance (1 patient with unknown insurance, 126 patients insured), Alcohol history (90 patients not reported), gravidity/parity (26 patients reported), menopause (26 patients reported), distant metastatic sites (only 2 sites reported), histology (14 patients with at least partial lobular disease), surgical margin (4 patients with ? residual disease), 2nd primary (only one patient reported)</p>
+<p>Variables not incorporated for this analysis: Marital status at diagnosis, breast primary site, laterality, TNM edition and clinical staging, tumorsize, lymphovascularinvasion (64 patients only reported), radiation variables</p>
+<p><img src="figure/Tempus.Rmd/Clinical%20summary-1.png" width="672" style="display: block; margin: auto;" /> This is the age distribution of patients at time of diagnosis. This population skews young but does have representation throughout the age range.</p>
+<table>
+<caption>Distribution of patients younger than age 50 (with 0 &gt; 50 and 1 &lt; 50</caption>
+<thead>
+<tr class="header">
+<th align="left">Var1</th>
+<th align="right">Freq</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">0</td>
+<td align="right">70</td>
+</tr>
+<tr class="even">
+<td align="left">1</td>
+<td align="right">57</td>
+</tr>
+</tbody>
+</table>
 <table>
 <caption>Self-reported races in our cohort (Y/N refers to Hispanic ethnicity)</caption>
 <thead>
@@ -622,18 +687,18 @@ tempusmerge &lt;- merge (tempusclinical, tempusmutationtemp, by=&quot;StudyID&qu
 </tr>
 <tr class="even">
 <td>Black</td>
-<td align="right">65</td>
+<td align="right">60</td>
 <td align="right">0</td>
 </tr>
 <tr class="odd">
 <td>White</td>
-<td align="right">65</td>
-<td align="right">4</td>
+<td align="right">63</td>
+<td align="right">3</td>
 </tr>
 </tbody>
 </table>
 <table>
-<caption>Number of birthed children</caption>
+<caption>Tobacco exposure</caption>
 <thead>
 <tr class="header">
 <th align="left">Var1</th>
@@ -642,33 +707,29 @@ tempusmerge &lt;- merge (tempusclinical, tempusmutationtemp, by=&quot;StudyID&qu
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">0</td>
-<td align="right">2</td>
-</tr>
-<tr class="even">
-<td align="left">1</td>
-<td align="right">5</td>
-</tr>
-<tr class="odd">
-<td align="left">2</td>
-<td align="right">6</td>
-</tr>
-<tr class="even">
-<td align="left">3</td>
-<td align="right">7</td>
-</tr>
-<tr class="odd">
-<td align="left">5</td>
-<td align="right">5</td>
-</tr>
-<tr class="even">
-<td align="left">6</td>
+<td align="left"></td>
 <td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">00 Never used</td>
+<td align="right">62</td>
+</tr>
+<tr class="odd">
+<td align="left">01 Cigarette smoker</td>
+<td align="right">18</td>
+</tr>
+<tr class="even">
+<td align="left">05 Previous tobacco use, but not at present time</td>
+<td align="right">26</td>
+</tr>
+<tr class="odd">
+<td align="left">99 Unknown</td>
+<td align="right">20</td>
 </tr>
 </tbody>
 </table>
 <table>
-<caption>Alive or dead, status at time of last follow up</caption>
+<caption>Alive or dead status last known</caption>
 <thead>
 <tr class="header">
 <th align="left">Var1</th>
@@ -678,11 +739,81 @@ tempusmerge &lt;- merge (tempusclinical, tempusmutationtemp, by=&quot;StudyID&qu
 <tbody>
 <tr class="odd">
 <td align="left">0 Dead</td>
-<td align="right">50</td>
+<td align="right">46</td>
 </tr>
 <tr class="even">
 <td align="left">1 Alive</td>
-<td align="right">85</td>
+<td align="right">81</td>
+</tr>
+</tbody>
+</table>
+<table>
+<caption>Fraction of patients with at least one node positive on study</caption>
+<thead>
+<tr class="header">
+<th align="left">Var1</th>
+<th align="right">Freq</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">0</td>
+<td align="right">51</td>
+</tr>
+<tr class="even">
+<td align="left">1</td>
+<td align="right">76</td>
+</tr>
+</tbody>
+</table>
+<table>
+<caption>Ki67 distribution as known in 116/127 patients</caption>
+<thead>
+<tr class="header">
+<th align="left">Var1</th>
+<th align="right">Freq</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"></td>
+<td align="right">116</td>
+</tr>
+<tr class="even">
+<td align="left">&gt;90%</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">10%</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="left">20-30%</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">20%</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">30%</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">35%</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">50%</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">60%</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">70%</td>
+<td align="right">1</td>
 </tr>
 </tbody>
 </table>
@@ -709,11 +840,11 @@ tempusmerge &lt;- merge (tempusclinical, tempusmutationtemp, by=&quot;StudyID&qu
 </tr>
 <tr class="even">
 <td align="left">2A</td>
-<td align="right">39</td>
+<td align="right">37</td>
 </tr>
 <tr class="odd">
 <td align="left">2B</td>
-<td align="right">32</td>
+<td align="right">28</td>
 </tr>
 <tr class="even">
 <td align="left">3</td>
@@ -721,7 +852,7 @@ tempusmerge &lt;- merge (tempusclinical, tempusmutationtemp, by=&quot;StudyID&qu
 </tr>
 <tr class="odd">
 <td align="left">3A</td>
-<td align="right">20</td>
+<td align="right">18</td>
 </tr>
 <tr class="even">
 <td align="left">3B</td>
@@ -749,16 +880,16 @@ tempusmerge &lt;- merge (tempusclinical, tempusmutationtemp, by=&quot;StudyID&qu
 </thead>
 <tbody>
 <tr class="odd">
-<td>FALSE</td>
+<td>0</td>
 <td>1</td>
-<td align="right">33</td>
-<td align="right">14</td>
+<td align="right">31</td>
+<td align="right">12</td>
 </tr>
 <tr class="even">
-<td>TRUE</td>
+<td>1</td>
 <td>4</td>
-<td align="right">56</td>
-<td align="right">27</td>
+<td align="right">53</td>
+<td align="right">26</td>
 </tr>
 </tbody>
 </table>
@@ -773,11 +904,30 @@ tempusmerge &lt;- merge (tempusclinical, tempusmutationtemp, by=&quot;StudyID&qu
 <tbody>
 <tr class="odd">
 <td align="left">No</td>
-<td align="right">40</td>
+<td align="right">38</td>
 </tr>
 <tr class="even">
 <td align="left">Yes</td>
-<td align="right">95</td>
+<td align="right">89</td>
+</tr>
+</tbody>
+</table>
+<table>
+<caption>Patients with neoadjuvant therapy</caption>
+<thead>
+<tr class="header">
+<th align="left">Var1</th>
+<th align="right">Freq</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">0</td>
+<td align="right">61</td>
+</tr>
+<tr class="even">
+<td align="left">1</td>
+<td align="right">27</td>
 </tr>
 </tbody>
 </table>
@@ -792,11 +942,11 @@ tempusmerge &lt;- merge (tempusclinical, tempusmutationtemp, by=&quot;StudyID&qu
 <tbody>
 <tr class="odd">
 <td align="left">No</td>
-<td align="right">52</td>
+<td align="right">49</td>
 </tr>
 <tr class="even">
 <td align="left">Yes</td>
-<td align="right">83</td>
+<td align="right">78</td>
 </tr>
 </tbody>
 </table>
@@ -815,7 +965,7 @@ tempusmerge &lt;- merge (tempusclinical, tempusmutationtemp, by=&quot;StudyID&qu
 </tr>
 <tr class="even">
 <td align="left">BCS</td>
-<td align="right">50</td>
+<td align="right">48</td>
 </tr>
 <tr class="odd">
 <td align="left">bilateral mam</td>
@@ -823,7 +973,7 @@ tempusmerge &lt;- merge (tempusclinical, tempusmutationtemp, by=&quot;StudyID&qu
 </tr>
 <tr class="even">
 <td align="left">mastectomy</td>
-<td align="right">74</td>
+<td align="right">68</td>
 </tr>
 <tr class="odd">
 <td align="left">other/uk/nos</td>
@@ -842,255 +992,26 @@ tempusmerge &lt;- merge (tempusclinical, tempusmutationtemp, by=&quot;StudyID&qu
 <tbody>
 <tr class="odd">
 <td align="left">No</td>
-<td align="right">61</td>
+<td align="right">56</td>
 </tr>
 <tr class="even">
 <td align="left">Yes</td>
-<td align="right">74</td>
+<td align="right">71</td>
 </tr>
 </tbody>
 </table>
-<p>There was not significant information on sites of distant metastases; only two patients were noted to have metastasis at time of diagnosis.</p>
+<p>Of note, with mutation testing prior to sequencing, we had 1 patient each report a BRCA 1 and BRCA 2 mutation.</p>
 </div>
 <div id="mutations-summary" class="section level1">
 <h1>Mutations summary</h1>
+<p>Variables not incorporated for this analysis: Percentile mutational burden (incomplete)</p>
 <p>We have representation of 560 genes with mutations in this data set (including both primary tumors and lymph nodes). The most common mutations were as follows:</p>
 <pre><code>  TP53  KMT2D  ZFHX3  KMT2B PIK3CA   MCL1 ARID1A NOTCH1 BCORL1   SPEN 
     90     74     68     55     53     52     37     37     35     34 </code></pre>
-<table>
-<caption>Distribution of tumor purity from samples</caption>
-<thead>
-<tr class="header">
-<th align="left">Var1</th>
-<th align="right">Freq</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">0.1</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">0.2</td>
-<td align="right">14</td>
-</tr>
-<tr class="odd">
-<td align="left">0.3</td>
-<td align="right">12</td>
-</tr>
-<tr class="even">
-<td align="left">0.4</td>
-<td align="right">10</td>
-</tr>
-<tr class="odd">
-<td align="left">0.5</td>
-<td align="right">11</td>
-</tr>
-<tr class="even">
-<td align="left">0.6</td>
-<td align="right">15</td>
-</tr>
-<tr class="odd">
-<td align="left">0.7</td>
-<td align="right">20</td>
-</tr>
-<tr class="even">
-<td align="left">0.75</td>
-<td align="right">3</td>
-</tr>
-<tr class="odd">
-<td align="left">0.8</td>
-<td align="right">26</td>
-</tr>
-<tr class="even">
-<td align="left">0.85</td>
-<td align="right">6</td>
-</tr>
-<tr class="odd">
-<td align="left">0.9</td>
-<td align="right">18</td>
-</tr>
-<tr class="even">
-<td align="left">0.95</td>
-<td align="right">3</td>
-</tr>
-</tbody>
-</table>
-<table>
-<caption>Distribution of tumor mutational burden</caption>
-<thead>
-<tr class="header">
-<th align="left">Var1</th>
-<th align="right">Freq</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">0.0 m/MB</td>
-<td align="right">5</td>
-</tr>
-<tr class="even">
-<td align="left">0.4 m/MB</td>
-<td align="right">15</td>
-</tr>
-<tr class="odd">
-<td align="left">0.8 m/MB</td>
-<td align="right">8</td>
-</tr>
-<tr class="even">
-<td align="left">1.3 m/MB</td>
-<td align="right">16</td>
-</tr>
-<tr class="odd">
-<td align="left">1.7 m/MB</td>
-<td align="right">7</td>
-</tr>
-<tr class="even">
-<td align="left">11.3 m/MB</td>
-<td align="right">3</td>
-</tr>
-<tr class="odd">
-<td align="left">11.7 m/MB</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">12.1 m/MB</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">12.5 m/MB</td>
-<td align="right">2</td>
-</tr>
-<tr class="even">
-<td align="left">12.9 m/MB</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">13.3 m/MB</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">13.8 m/MB</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">14.2 m/MB</td>
-<td align="right">2</td>
-</tr>
-<tr class="even">
-<td align="left">14.6 m/MB</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">16.3 m/MB</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">17.9 m/MB</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">2.1 m/MB</td>
-<td align="right">13</td>
-</tr>
-<tr class="even">
-<td align="left">2.5 m/MB</td>
-<td align="right">6</td>
-</tr>
-<tr class="odd">
-<td align="left">2.9 m/MB</td>
-<td align="right">5</td>
-</tr>
-<tr class="even">
-<td align="left">20.4 m/MB</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
-<td align="left">23.3 m/MB</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">26.7 m/MB</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">28.8 m/MB</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">3.3 m/MB</td>
-<td align="right">11</td>
-</tr>
-<tr class="odd">
-<td align="left">3.8 m/MB</td>
-<td align="right">2</td>
-</tr>
-<tr class="even">
-<td align="left">30.4 m/MB</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
-<td align="left">35.0 m/MB</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">35.4 m/MB</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">4.2 m/MB</td>
-<td align="right">3</td>
-</tr>
-<tr class="even">
-<td align="left">4.6 m/MB</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
-<td align="left">42.5 m/MB</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">5.0 m/MB</td>
-<td align="right">4</td>
-</tr>
-<tr class="odd">
-<td align="left">5.4 m/MB</td>
-<td align="right">6</td>
-</tr>
-<tr class="even">
-<td align="left">57.5 m/MB</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">58.3 m/MB</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">6.7 m/MB</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">7.5 m/MB</td>
-<td align="right">3</td>
-</tr>
-<tr class="even">
-<td align="left">7.9 m/MB</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
-<td align="left">71.3 m/MB</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">76.3 m/MB</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">8.8 m/MB</td>
-<td align="right">1</td>
-</tr>
-</tbody>
-</table>
+<p><img src="figure/Tempus.Rmd/Mutation%20summary%20and%20tumor%20purity-1.png" width="672" style="display: block; margin: auto;" /> This is the tumor purity distribution of patients at time of diagnosis. 30% purity is conisdered sufficient to perform MSI testing, for example. 104 of our 127 samples met this criteria.</p>
+<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+   1.00    4.00   17.00   16.08   24.50   41.00 </code></pre>
+<p><img src="figure/Tempus.Rmd/Ongoing%20mutational%20summary-1.png" width="672" style="display: block; margin: auto;" /> Only 88 of 139 reports contained percentile information.</p>
 <table>
 <caption>Distribution of MSI status</caption>
 <thead>
@@ -1106,15 +1027,15 @@ tempusmerge &lt;- merge (tempusclinical, tempusmutationtemp, by=&quot;StudyID&qu
 </tr>
 <tr class="even">
 <td align="left">High</td>
-<td align="right">3</td>
+<td align="right">2</td>
 </tr>
 <tr class="odd">
 <td align="left">MSI can not be assessed because the tumor content is below 30%.</td>
-<td align="right">10</td>
+<td align="right">6</td>
 </tr>
 <tr class="even">
 <td align="left">Stable</td>
-<td align="right">71</td>
+<td align="right">64</td>
 </tr>
 <tr class="odd">
 <td align="left">Stable (MSS)</td>
@@ -1136,31 +1057,207 @@ tempusmerge &lt;- merge (tempusclinical, tempusmutationtemp, by=&quot;StudyID&qu
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left"></td>
-<td align="right">3</td>
+<td align="left">Missense variant</td>
+<td align="right">1807</td>
 </tr>
 <tr class="even">
-<td align="left">copy number gain</td>
-<td align="right">17</td>
+<td align="left">Stop gain</td>
+<td align="right">412</td>
 </tr>
 <tr class="odd">
+<td align="left">Splice region variant</td>
+<td align="right">407</td>
+</tr>
+<tr class="even">
 <td align="left">Copy number gain</td>
 <td align="right">319</td>
 </tr>
-<tr class="even">
-<td align="left">Copy Number gain</td>
-<td align="right">11</td>
-</tr>
 <tr class="odd">
-<td align="left">copy number loss</td>
-<td align="right">19</td>
-</tr>
-<tr class="even">
 <td align="left">Copy number loss</td>
 <td align="right">319</td>
 </tr>
+<tr class="even">
+<td align="left">Frameshift</td>
+<td align="right">255</td>
+</tr>
+<tr class="odd">
+<td align="left">Frameshift- LOF</td>
+<td align="right">64</td>
+</tr>
+<tr class="even">
+<td align="left">Stop gain- LOF</td>
+<td align="right">57</td>
+</tr>
+<tr class="odd">
+<td align="left">Inframe deletion</td>
+<td align="right">51</td>
+</tr>
+<tr class="even">
+<td align="left">Splice region</td>
+<td align="right">36</td>
+</tr>
+<tr class="odd">
+<td align="left">Missense variant- LOF</td>
+<td align="right">29</td>
+</tr>
+<tr class="even">
+<td align="left">Missense variant - LOF</td>
+<td align="right">26</td>
+</tr>
+<tr class="odd">
+<td align="left">Frameshift - LOF</td>
+<td align="right">22</td>
+</tr>
+<tr class="even">
+<td align="left">copy number loss</td>
+<td align="right">19</td>
+</tr>
+<tr class="odd">
+<td align="left">Stop gain - LOF</td>
+<td align="right">19</td>
+</tr>
+<tr class="even">
+<td align="left">Splice region variant- LOF</td>
+<td align="right">18</td>
+</tr>
+<tr class="odd">
+<td align="left">copy number gain</td>
+<td align="right">17</td>
+</tr>
+<tr class="even">
+<td align="left">Missense variant (exon 10) - GOF</td>
+<td align="right">17</td>
+</tr>
+<tr class="odd">
+<td align="left">missense variant</td>
+<td align="right">14</td>
+</tr>
+<tr class="even">
+<td align="left">Missense variant (exon 21) - GOF</td>
+<td align="right">13</td>
+</tr>
+<tr class="odd">
+<td align="left">Copy Number gain</td>
+<td align="right">11</td>
+</tr>
+<tr class="even">
+<td align="left">Missense variant- GOF</td>
+<td align="right">10</td>
+</tr>
+<tr class="odd">
+<td align="left">region variant</td>
+<td align="right">8</td>
+</tr>
+<tr class="even">
+<td align="left">Start loss</td>
+<td align="right">8</td>
+</tr>
+<tr class="odd">
+<td align="left">frameshift</td>
+<td align="right">4</td>
+</tr>
+<tr class="even">
+<td align="left">Frameshift VAF:</td>
+<td align="right">4</td>
+</tr>
+<tr class="odd">
+<td align="left">Inframe insertion</td>
+<td align="right">4</td>
+</tr>
+<tr class="even">
+<td align="left">Missense variant -LOF</td>
+<td align="right">4</td>
+</tr>
+<tr class="odd">
+<td align="left">Missense variant (exon 5) - GOF</td>
+<td align="right">4</td>
+</tr>
+<tr class="even">
+<td align="left">Splice region vairant</td>
+<td align="right">4</td>
+</tr>
+<tr class="odd">
+<td align="left">Splice region variant- GOF</td>
+<td align="right">4</td>
+</tr>
+<tr class="even">
+<td align="left"></td>
+<td align="right">3</td>
+</tr>
+<tr class="odd">
+<td align="left">Splice region variant - LOF</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="left">stop gain</td>
+<td align="right">3</td>
+</tr>
+<tr class="odd">
+<td align="left">Stop gain-</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="left">Variant</td>
+<td align="right">3</td>
+</tr>
 <tr class="odd">
 <td align="left">Copy Number Loss</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">Frameshift LOF</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">Missense Variant</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">Missense variant - GOF</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">Missense variant (exon 10)- GOF</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">Missense variant (exon 14) - GOF</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">Missense variant â LOF</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">Missense variant LOF</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">Missense variant-LOF</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">Missense variant(exon 2) - GOF</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">splice region variant</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">Splice region variant â LOF</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">Splice region variant VAF</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">Stop Gain</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">Stop gain LOF</td>
 <td align="right">2</td>
 </tr>
 <tr class="even">
@@ -1170,30 +1267,6 @@ tempusmerge &lt;- merge (tempusclinical, tempusmutationtemp, by=&quot;StudyID&qu
 <tr class="odd">
 <td align="left">copy numbre gain</td>
 <td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">frameshift</td>
-<td align="right">4</td>
-</tr>
-<tr class="odd">
-<td align="left">Frameshift</td>
-<td align="right">255</td>
-</tr>
-<tr class="even">
-<td align="left">Frameshift - LOF</td>
-<td align="right">22</td>
-</tr>
-<tr class="odd">
-<td align="left">Frameshift LOF</td>
-<td align="right">2</td>
-</tr>
-<tr class="even">
-<td align="left">Frameshift VAF:</td>
-<td align="right">4</td>
-</tr>
-<tr class="odd">
-<td align="left">Frameshift- LOF</td>
-<td align="right">64</td>
 </tr>
 <tr class="even">
 <td align="left">Frameshift- LOF VAF</td>
@@ -1208,20 +1281,12 @@ tempusmerge &lt;- merge (tempusclinical, tempusmutationtemp, by=&quot;StudyID&qu
 <td align="right">1</td>
 </tr>
 <tr class="odd">
-<td align="left">Inframe deletion</td>
-<td align="right">51</td>
-</tr>
-<tr class="even">
 <td align="left">Inframe deletion - GOF</td>
 <td align="right">1</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">inframe insertion</td>
 <td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">Inframe insertion</td>
-<td align="right">4</td>
 </tr>
 <tr class="odd">
 <td align="left">Inframe insertion - GOF</td>
@@ -1236,112 +1301,40 @@ tempusmerge &lt;- merge (tempusclinical, tempusmutationtemp, by=&quot;StudyID&qu
 <td align="right">1</td>
 </tr>
 <tr class="even">
-<td align="left">missense variant</td>
-<td align="right">14</td>
-</tr>
-<tr class="odd">
-<td align="left">Missense variant</td>
-<td align="right">1807</td>
-</tr>
-<tr class="even">
-<td align="left">Missense Variant</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
 <td align="left">Missense variant -</td>
 <td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">Missense variant - GOF</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
-<td align="left">Missense variant - LOF</td>
-<td align="right">26</td>
-</tr>
-<tr class="even">
-<td align="left">Missense variant -LOF</td>
-<td align="right">4</td>
-</tr>
-<tr class="odd">
-<td align="left">Missense variant (exon 10) - GOF</td>
-<td align="right">17</td>
-</tr>
-<tr class="even">
-<td align="left">Missense variant (exon 10)- GOF</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
-<td align="left">Missense variant (exon 14) - GOF</td>
-<td align="right">2</td>
-</tr>
-<tr class="even">
-<td align="left">Missense variant (exon 21) - GOF</td>
-<td align="right">13</td>
 </tr>
 <tr class="odd">
 <td align="left">Missense variant (exon 21) - GOF VAF</td>
 <td align="right">1</td>
 </tr>
 <tr class="even">
-<td align="left">Missense variant (exon 5) - GOF</td>
-<td align="right">4</td>
-</tr>
-<tr class="odd">
 <td align="left">Missense variant (exon 8) - GOF</td>
 <td align="right">1</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">Missense Variant (exon 8)- GOF</td>
 <td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">Missense variant â LOF</td>
-<td align="right">2</td>
 </tr>
 <tr class="even">
 <td align="left">Missense variant GOF</td>
 <td align="right">1</td>
 </tr>
 <tr class="odd">
-<td align="left">Missense variant LOF</td>
-<td align="right">2</td>
-</tr>
-<tr class="even">
-<td align="left">Missense variant- GOF</td>
-<td align="right">10</td>
-</tr>
-<tr class="odd">
-<td align="left">Missense variant- LOF</td>
-<td align="right">29</td>
-</tr>
-<tr class="even">
-<td align="left">Missense variant-LOF</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
 <td align="left">Missense variant(exon 10) - GOF</td>
 <td align="right">1</td>
 </tr>
 <tr class="even">
-<td align="left">Missense variant(exon 2) - GOF</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
 <td align="left">Missense variant(exon 4) - GOF</td>
 <td align="right">1</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">Missesne variant</td>
 <td align="right">1</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">rameshift</td>
 <td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">region variant</td>
-<td align="right">8</td>
 </tr>
 <tr class="odd">
 <td align="left">region variant- LOF</td>
@@ -1352,60 +1345,20 @@ tempusmerge &lt;- merge (tempusclinical, tempusmutationtemp, by=&quot;StudyID&qu
 <td align="right">1</td>
 </tr>
 <tr class="odd">
-<td align="left">Splice region</td>
-<td align="right">36</td>
-</tr>
-<tr class="even">
-<td align="left">Splice region vairant</td>
-<td align="right">4</td>
-</tr>
-<tr class="odd">
 <td align="left">Splice region vairant - LOF</td>
 <td align="right">1</td>
 </tr>
 <tr class="even">
-<td align="left">splice region variant</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
-<td align="left">Splice region variant</td>
-<td align="right">407</td>
-</tr>
-<tr class="even">
-<td align="left">Splice region variant - LOF</td>
-<td align="right">3</td>
-</tr>
-<tr class="odd">
 <td align="left">Splice region variant -LOF</td>
 <td align="right">1</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">Splice region variant â GOF</td>
 <td align="right">1</td>
 </tr>
-<tr class="odd">
-<td align="left">Splice region variant â LOF</td>
-<td align="right">2</td>
-</tr>
 <tr class="even">
-<td align="left">Splice region variant VAF</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
-<td align="left">Splice region variant- GOF</td>
-<td align="right">4</td>
-</tr>
-<tr class="even">
-<td align="left">Splice region variant- LOF</td>
-<td align="right">18</td>
-</tr>
-<tr class="odd">
 <td align="left">Splice region variant-(exon 3) â GOF</td>
 <td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">Start loss</td>
-<td align="right">8</td>
 </tr>
 <tr class="odd">
 <td align="left">Start Loss</td>
@@ -1416,67 +1369,85 @@ tempusmerge &lt;- merge (tempusclinical, tempusmutationtemp, by=&quot;StudyID&qu
 <td align="right">1</td>
 </tr>
 <tr class="odd">
-<td align="left">stop gain</td>
-<td align="right">3</td>
-</tr>
-<tr class="even">
-<td align="left">Stop gain</td>
-<td align="right">412</td>
-</tr>
-<tr class="odd">
-<td align="left">Stop Gain</td>
-<td align="right">2</td>
-</tr>
-<tr class="even">
-<td align="left">Stop gain - LOF</td>
-<td align="right">19</td>
-</tr>
-<tr class="odd">
-<td align="left">Stop gain LOF</td>
-<td align="right">2</td>
-</tr>
-<tr class="even">
 <td align="left">Stop gain VAF</td>
 <td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">Stop gain-</td>
-<td align="right">3</td>
 </tr>
 <tr class="even">
 <td align="left">Stop gain- GOF</td>
 <td align="right">1</td>
 </tr>
 <tr class="odd">
-<td align="left">Stop gain- LOF</td>
-<td align="right">57</td>
-</tr>
-<tr class="even">
 <td align="left">Stop gain-LOF</td>
 <td align="right">1</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">Stop gain(exon 4) - LOF</td>
 <td align="right">1</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">Stop loss</td>
 <td align="right">1</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">Stopgain</td>
 <td align="right">1</td>
 </tr>
-<tr class="even">
-<td align="left">Variant</td>
-<td align="right">3</td>
+<tr class="odd">
+<td align="left">Missense variants, splice region variants</td>
+<td align="right">, stop gains and copy number gains/losses were the best represented in our cohort.</td>
 </tr>
 </tbody>
 </table>
-<p>We did not appear to have an unusual distribution of TMB or MSI status at the outset of sequencing. Missense variants, splice region variants, stop gains and copy number gains/losses were the best represented in our cohort.</p>
 </div>
-<div id="interactions-between-mutations-and-clinical-status" class="section level1">
-<h1>Interactions between mutations and clinical status</h1>
+<div id="exploring-what-mutation-distribution-means-from-a-clinical-standpoint" class="section level1">
+<h1>Exploring what mutation distribution means from a clinical standpoint</h1>
+<pre class="r"><code>summary(tempusmergedupclean$genecount)</code></pre>
+<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+   1.00    7.00   12.00   24.72   24.00  184.00 </code></pre>
+<pre class="r"><code>table(tempusmergedupclean$genecount&gt;25)</code></pre>
+<pre><code>
+FALSE  TRUE 
+   96    31 </code></pre>
+<pre class="r"><code>hist(tempusmergedupclean$genecount, main=&quot;Distribution of uniquely mutated genes per patient sample&quot;)</code></pre>
+<p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-1-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>hist(tempusmergedupclean$maxvariantcount, main=&quot;Distribution of highest number of variants\n for a single gene per patient sample&quot;)</code></pre>
+<p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-1-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>hist(tempusmergedupclean$TMB, main=&quot;Distribution of tumor mutational burden (as measured by Tempus)&quot;)</code></pre>
+<p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-1-3.png" width="672" style="display: block; margin: auto;" /> We see a long tail towards the right in terms of frequency of uniquely mutated genes, number of variants for a single gene and TMB. However, these do not clearly correlate in a linear distribution.</p>
+<pre class="r"><code>ggplot()+
+  geom_line(data=tempusmergedupclean, aes(x=tempusmergedupclean$TMB, y=tempusmergedupclean$maxvariantcount), size=1, color=&quot;red&quot;)+
+  geom_line(data=tempusmergedupclean, aes(x=tempusmergedupclean$TMB, y=tempusmergedupclean$genecount), size=1, color=&quot;blue&quot;)</code></pre>
+<p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-2-1.png" width="672" style="display: block; margin: auto;" /> There are peaks and valleys with rising TMB in which gene count and max variant count (per gene) correlate to each other, but these do not increase in a completely linear fashion.</p>
+<pre class="r"><code>chisq.test((tempusmergedupclean$genecount&gt;12), tempusmergedupclean$recurrenceposneg)</code></pre>
+<pre><code>
+    Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
+
+data:  (tempusmergedupclean$genecount &gt; 12) and tempusmergedupclean$recurrenceposneg
+X-squared = 2.374, df = 1, p-value = 0.1234</code></pre>
+<pre class="r"><code>chisq.test((tempusmergedupclean$maxvariantcount&gt;2), tempusmergedupclean$recurrenceposneg)</code></pre>
+<pre><code>
+    Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
+
+data:  (tempusmergedupclean$maxvariantcount &gt; 2) and tempusmergedupclean$recurrenceposneg
+X-squared = 1.686, df = 1, p-value = 0.1941</code></pre>
+<pre class="r"><code>chisq.test((tempusmergedupclean$TMB&gt;3), tempusmergedupclean$recurrenceposneg)</code></pre>
+<pre><code>
+    Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
+
+data:  (tempusmergedupclean$TMB &gt; 3) and tempusmergedupclean$recurrenceposneg
+X-squared = 5.8608, df = 1, p-value = 0.01548</code></pre>
+<p>Using the Chi-squared test, there was an association between tumor mutational burden as measured by Tempus and recurrence at all, but not using number of genes mutated (above the mean) or maximum number of variants for a single gene (above the mean).</p>
+<pre class="r"><code>#Do copy number changes and splice variants affect outcome</code></pre>
+<pre class="r"><code>#HER2 and HRstatus discrepanies
+#HER2 + but 19 copy number change in total (discrepancy between how patients were treated and longterm) 
+
+#kable(table(tempusmerge$HRstatus[unique(tempusmerge$StudyID)], tempusmerge$hormonetherapy[unique(tempusmerge$StudyID)]), caption=&quot;Fraction of patients who received hormone therapy relative to having hormone receptor status positive disease - 15 patients did not get hormone therapy when they did have hormone receptor positive disease reportedly&quot;)</code></pre>
+<pre class="r"><code>#Neoadjuvant characteristic as attribute -&gt; look at patterns of response based on mutations (ER+ / ER-) take out HER2+ </code></pre>
+<pre class="r"><code>#For triple negative patients, see if there is residual disease after chemotherapy?
+#Look at what mutations predict response if neoadjuvant?</code></pre>
+<pre class="r"><code>#Dates of surgery OK to start / enter into the study
+#Alive or dead / date of last f/u</code></pre>
+<pre class="r"><code>#sameptsamegenemultivariant &lt;- tempusmutation %&gt;% group_by (StudyID, Gene) %&gt;% filter((duplicated(StudyID) &amp; duplicated(Gene) &amp; duplicated(AccessionNo)) | (duplicated(StudyID, fromLast=TRUE) &amp; duplicated(AccessionNo, fromLast=TRUE) &amp; duplicated(Gene, fromLast=TRUE))) %&gt;% dplyr::select(&quot;StudyID&quot;, &quot;AccessionNo&quot;, &quot;Tumorspecimen&quot;, &quot;Gene&quot;, &quot;variant_name_C&quot;, &quot;variant_name_P&quot;, &quot;NM_number&quot;, &quot;typeofvariant&quot;, &quot;genecount&quot;, &quot;variantcount&quot;)</code></pre>
 <div id="session-information" class="section level2">
 <h2>Session information</h2>
 <pre class="r"><code>sessionInfo()</code></pre>
@@ -1495,7 +1466,7 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] knitr_1.21     bindrcpp_0.2.2 ggplot2_3.1.0  dplyr_0.7.8   
+[1] bindrcpp_0.2.2 ggplot2_3.1.0  knitr_1.21     dplyr_0.7.8   
 [5] tidyr_0.8.2   
 
 loaded via a namespace (and not attached):
@@ -1511,8 +1482,8 @@ loaded via a namespace (and not attached):
 [28] rmarkdown_1.11    purrr_0.2.5       magrittr_1.5     
 [31] whisker_0.3-2     backports_1.1.3   scales_1.0.0     
 [34] htmltools_0.3.6   assertthat_0.2.0  colorspace_1.4-0 
-[37] stringi_1.2.4     lazyeval_0.2.1    munsell_0.5.0    
-[40] crayon_1.3.4      R.oo_1.22.0      </code></pre>
+[37] labeling_0.3      stringi_1.2.4     lazyeval_0.2.1   
+[40] munsell_0.5.0     crayon_1.3.4      R.oo_1.22.0      </code></pre>
 </div>
 </div>
 
