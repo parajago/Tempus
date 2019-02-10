@@ -323,13 +323,13 @@ We saw significant associations between recurrence and gene count, variant count
 subtypeyoung <- tempusmergedupclean %>% filter(age50==1)
 allgenesyoung<- colSums(!((subtypeyoung[,105:663])==""))
 allgenesyoung["ERBB2/HER2"] <- sum(allgenesyoung["ERBB2"], allgenesyoung["ERBB2 (HER2)"], allgenesyoung["ERBB2(HER2)"], allgenesyoung["ERBB2HER2)"])
-headyoung <- head(sort(allgenesyoung, decreasing=TRUE), 10)
+headyoung <- head(sort(allgenesyoung, decreasing=TRUE), 5)
 headyoung
 
 subtypeold <- tempusmergedupclean %>% filter(age50==0)
 allgenesold<- colSums(!((subtypeold[,105:663])==""))
 allgenesold["ERBB2/HER2"] <- sum(allgenesold["ERBB2"], allgenesold["ERBB2 (HER2)"], allgenesold["ERBB2(HER2)"], allgenesold["ERBB2HER2)"])
-headold <- head(sort(allgenesold, decreasing=TRUE), 10)
+headold <- head(sort(allgenesold, decreasing=TRUE), 5)
 headold
 
 surv_object <- Surv(time = tempusmergedupclean$timefu, event = tempusmergedupclean$vitalstatus)
@@ -341,7 +341,7 @@ chisq.test(headold, headyoung)
 mylogit <- glm(tempusmergedupclean$vitalstatus ~ tempusmergedupclean$genecount + tempusmergedupclean$TMB + tempusmergedupclean$age_at_diagnosis + tempusmergedupclean$race +tempusmergedupclean$stage14, data = tempusmergedupclean, family = "binomial")
 summary(mylogit)
 ```
-Younger patients in general were more likely to do worse in this study. We did a statistically significant difference in the distribution of genes in the younger patients relative to the older patients. In a logistic regression, while overall gene counts did not make a difference, age at diagnosis could be accounted for separately from stage. 
+Younger patients in general were more likely to do worse in this study. We did not see a a statistically significant difference in the distribution of genes in the younger patients relative to the older patients (for the top 5 genes). In a logistic regression, while overall gene counts did not make a difference, age at diagnosis could be accounted for separately from stage. 
 
 ```{r Pending analyses}
 #Greater exploration of discrepancies in mutation status and subtype assignment

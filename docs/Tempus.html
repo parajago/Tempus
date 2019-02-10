@@ -438,7 +438,7 @@ div.section {
 </details>
 </li>
 <li>
-<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> 99339fe </summary></p>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> 7fbf15a </summary></p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
 <pre><code>
 Ignored files:
@@ -481,6 +481,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align:left;">
+Rmd
+</td>
+<td style="text-align:left;">
+7fbf15a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-02-10
+</td>
+<td style="text-align:left;">
+analysis step 2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+html
+</td>
+<td style="text-align:left;">
+7fbf15a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-02-10
+</td>
+<td style="text-align:left;">
+analysis step 2
+</td>
+</tr>
 <tr>
 <td style="text-align:left;">
 Rmd
@@ -1173,6 +1207,17 @@ Date
 <tbody>
 <tr>
 <td style="text-align:left;">
+7fbf15a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-02-10
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 99339fe
 </td>
 <td style="text-align:left;">
@@ -1800,6 +1845,17 @@ Date
 <tbody>
 <tr>
 <td style="text-align:left;">
+7fbf15a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-02-10
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 99339fe
 </td>
 <td style="text-align:left;">
@@ -1841,6 +1897,17 @@ Date
 <tbody>
 <tr>
 <td style="text-align:left;">
+7fbf15a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-02-10
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 99339fe
 </td>
 <td style="text-align:left;">
@@ -1858,22 +1925,202 @@ Sheila Rajagopal
 fit1&lt;- survfit(Surv(log(tempusmergedupclean$genecount)) ~ recurrenceposneg, data = tempusmergedupclean)
 ggsurvplot(fit1, pval=TRUE)</code></pre>
 <p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-3-1.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of Mutation distribution per patient-3-1.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+7fbf15a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-02-10
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <pre class="r"><code>fit2&lt;- survfit(Surv(log(tempusmergedupclean$maxvariantcount)) ~ recurrenceposneg, data = tempusmergedupclean)
 ggsurvplot(fit2, pval=TRUE)</code></pre>
 <p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-3-2.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of Mutation distribution per patient-3-2.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+7fbf15a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-02-10
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <pre class="r"><code>fit3&lt;- survfit(Surv(tempusmergedupclean$TMB) ~ recurrenceposneg, data = tempusmergedupclean)
 ggsurvplot(fit3, pval=TRUE)</code></pre>
 <p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-3-3.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of Mutation distribution per patient-3-3.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+7fbf15a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-02-10
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <pre class="r"><code>surv_object &lt;- Surv(time = tempusmergedupclean$timefu, event = tempusmergedupclean$vitalstatus)
 fit1&lt;- survfit(Surv(log(tempusmergedupclean$genecount)) ~ vitalstatus, data = tempusmergedupclean)
 ggsurvplot(fit1, pval=TRUE)</code></pre>
 <p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-3-4.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of Mutation distribution per patient-3-4.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+7fbf15a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-02-10
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <pre class="r"><code>fit2&lt;- survfit(Surv(log(tempusmergedupclean$maxvariantcount)) ~ vitalstatus, data = tempusmergedupclean)
 ggsurvplot(fit2, pval=TRUE)</code></pre>
 <p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-3-5.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of Mutation distribution per patient-3-5.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+7fbf15a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-02-10
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <pre class="r"><code>fit3&lt;- survfit(Surv(tempusmergedupclean$TMB) ~ vitalstatus, data = tempusmergedupclean)
 ggsurvplot(fit3, pval=TRUE)</code></pre>
 <p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-3-6.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of Mutation distribution per patient-3-6.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+7fbf15a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-02-10
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <pre class="r"><code>mylogit &lt;- glm(tempusmergedupclean$recurrenceposneg ~ tempusmergedupclean$genecount + tempusmergedupclean$age50 + tempusmergedupclean$race +tempusmergedupclean$stage14, data = tempusmergedupclean, family = &quot;binomial&quot;)
 summary(mylogit)</code></pre>
 <pre><code>
@@ -1906,36 +2153,95 @@ AIC: 150.07
 
 Number of Fisher Scoring iterations: 14</code></pre>
 <pre class="r"><code>plot(tempusmergedupclean$stage14, tempusmergedupclean$genecount)</code></pre>
-<p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-3-7.png" width="672" style="display: block; margin: auto;" /> We saw significant associations between recurrence and gene count, variant count and TMB. We did not see a signfiicant association wtih TMB and survival but a trend. When you performed a logistic regression stratifying for age, race and stage, these did not maintain significance, but this may be due to the smaller sample size as genecount did not correlate closely with stage and would not expected to be completely substituted for by this variable in this data set.</p>
+<p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-3-7.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of Mutation distribution per patient-3-7.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+7fbf15a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-02-10
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
+<p>We saw significant associations between recurrence and gene count, variant count and TMB. We did not see a signfiicant association wtih TMB and survival but a trend. When you performed a logistic regression stratifying for age, race and stage, these did not maintain significance, but this may be due to the smaller sample size as genecount did not correlate closely with stage and would not expected to be completely substituted for by this variable in this data set.</p>
 </div>
 <div id="gene-mutations-in-younger-patients" class="section level1">
 <h1>Gene mutations in younger patients</h1>
 <pre class="r"><code>subtypeyoung &lt;- tempusmergedupclean %&gt;% filter(age50==1)
 allgenesyoung&lt;- colSums(!((subtypeyoung[,105:663])==&quot;&quot;))
 allgenesyoung[&quot;ERBB2/HER2&quot;] &lt;- sum(allgenesyoung[&quot;ERBB2&quot;], allgenesyoung[&quot;ERBB2 (HER2)&quot;], allgenesyoung[&quot;ERBB2(HER2)&quot;], allgenesyoung[&quot;ERBB2HER2)&quot;])
-headyoung &lt;- head(sort(allgenesyoung, decreasing=TRUE), 10)
+headyoung &lt;- head(sort(allgenesyoung, decreasing=TRUE), 5)
 headyoung</code></pre>
-<pre><code>  TP53   MCL1  KMT2D    FLG NOTCH1 PIK3CA  ZFHX3  CDK12   CDK4   MDM2 
-    32     20     13     12     12     11     11     10     10     10 </code></pre>
+<pre><code>  TP53   MCL1  KMT2D    FLG NOTCH1 
+    32     20     13     12     12 </code></pre>
 <pre class="r"><code>subtypeold &lt;- tempusmergedupclean %&gt;% filter(age50==0)
 allgenesold&lt;- colSums(!((subtypeold[,105:663])==&quot;&quot;))
 allgenesold[&quot;ERBB2/HER2&quot;] &lt;- sum(allgenesold[&quot;ERBB2&quot;], allgenesold[&quot;ERBB2 (HER2)&quot;], allgenesold[&quot;ERBB2(HER2)&quot;], allgenesold[&quot;ERBB2HER2)&quot;])
-headold &lt;- head(sort(allgenesold, decreasing=TRUE), 10)
+headold &lt;- head(sort(allgenesold, decreasing=TRUE), 5)
 headold</code></pre>
-<pre><code>      TP53     PIK3CA       MCL1 ERBB2/HER2       FAT1     BCORL1 
-        40         28         24         23         17         16 
-     ZFHX3      KMT2B      AMER1        ATM 
-        16         15         14         14 </code></pre>
+<pre><code>      TP53     PIK3CA       MCL1 ERBB2/HER2       FAT1 
+        40         28         24         23         17 </code></pre>
 <pre class="r"><code>surv_object &lt;- Surv(time = tempusmergedupclean$timefu, event = tempusmergedupclean$vitalstatus)
 fit1&lt;- survfit(Surv(log(tempusmergedupclean$age_at_diagnosis)) ~ vitalstatus, data = tempusmergedupclean)
 ggsurvplot(fit1, pval=TRUE)</code></pre>
 <p><img src="figure/Tempus.Rmd/Mutation%20distribution%20in%20patients%20%3C%2050-1.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of Mutation distribution in patients &lt; 50-1.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+7fbf15a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-02-10
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <pre class="r"><code>chisq.test(headold, headyoung)</code></pre>
 <pre><code>
     Pearson&#39;s Chi-squared test
 
 data:  headold and headyoung
-X-squared = 50, df = 35, p-value = 0.0481</code></pre>
+X-squared = 15, df = 12, p-value = 0.2414</code></pre>
 <pre class="r"><code>mylogit &lt;- glm(tempusmergedupclean$vitalstatus ~ tempusmergedupclean$genecount + tempusmergedupclean$TMB + tempusmergedupclean$age_at_diagnosis + tempusmergedupclean$race +tempusmergedupclean$stage14, data = tempusmergedupclean, family = &quot;binomial&quot;)
 summary(mylogit)</code></pre>
 <pre><code>
@@ -1976,7 +2282,7 @@ Residual deviance: 150.35  on 120  degrees of freedom
 AIC: 164.35
 
 Number of Fisher Scoring iterations: 14</code></pre>
-<p>Younger patients in general were more likely to do worse in this study. We did a statistically significant difference in the distribution of genes in the younger patients relative to the older patients. In a logistic regression, while overall gene counts did not make a difference, age at diagnosis could be accounted for separately from stage.</p>
+<p>Younger patients in general were more likely to do worse in this study. We did not see a a statistically significant difference in the distribution of genes in the younger patients relative to the older patients (for the top 5 genes). In a logistic regression, while overall gene counts did not make a difference, age at diagnosis could be accounted for separately from stage.</p>
 <pre class="r"><code>#Greater exploration of discrepancies in mutation status and subtype assignment
 #Residual disease after chemotherapy and assessment of mutation changes here 
 #How do mutation types affect outcomes</code></pre>
