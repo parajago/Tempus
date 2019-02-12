@@ -415,11 +415,12 @@ div.section {
 </div>
 
 
-<p><strong>Last updated:</strong> 2019-02-10</p>
+<p><strong>Last updated:</strong> 2019-02-12</p>
 <strong>workflowr checks:</strong> <small>(Click a bullet for more information)</small>
 <ul>
 <li>
-<p><details> <summary> <strong style="color:red;">✖</strong> <strong>R Markdown file:</strong> uncommitted changes </summary> The R Markdown file has unstaged changes. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>R Markdown file:</strong> up-to-date </summary></p>
+<p>Great! Since the R Markdown file has been committed to the Git repository, you know the exact version of the code that produced these results.</p>
 </details>
 </li>
 <li>
@@ -438,7 +439,7 @@ div.section {
 </details>
 </li>
 <li>
-<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> 7fbf15a </summary></p>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> 733bba4 </summary></p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
 <pre><code>
 Ignored files:
@@ -449,10 +450,8 @@ Ignored files:
     Ignored:    code/
     Ignored:    data/
     Ignored:    docs/.DS_Store
-    Ignored:    output/
-
-Unstaged changes:
-    Modified:   analysis/Tempus.Rmd
+    Ignored:    docs/figure/.DS_Store
+    Ignored:    output/.DS_Store
 
 </code></pre>
 Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes. </details>
@@ -481,6 +480,74 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align:left;">
+Rmd
+</td>
+<td style="text-align:left;">
+733bba4
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-02-12
+</td>
+<td style="text-align:left;">
+repeat cleaned up analysis
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Rmd
+</td>
+<td style="text-align:left;">
+b3040b6
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-02-10
+</td>
+<td style="text-align:left;">
+analysis neo
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Rmd
+</td>
+<td style="text-align:left;">
+3a23302
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-02-10
+</td>
+<td style="text-align:left;">
+analysis 3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+html
+</td>
+<td style="text-align:left;">
+3a23302
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-02-10
+</td>
+<td style="text-align:left;">
+analysis 3
+</td>
+</tr>
 <tr>
 <td style="text-align:left;">
 Rmd
@@ -683,6 +750,11 @@ tempusmerge$subtype &lt;- ifelse (tempusmerge$HER2.x==&quot;Neg&quot; &amp; temp
 tempusmerge$subtype &lt;- ifelse (tempusmerge$HER2.x==&quot;Pos&quot; &amp; tempusmerge$HRstatus==0, &quot;HER+/HR-&quot;, tempusmerge$subtype) #Characterizing the subtype variable
 tempusmerge$subtype &lt;- ifelse (tempusmerge$HER2.x==&quot;Pos&quot; &amp; tempusmerge$HRstatus==1, &quot;HER+/HR+&quot;, tempusmerge$subtype) #Characterizing the subtype variable
 tempusmerge$subtype &lt;- ifelse (tempusmerge$HER2.x==&quot;Neg&quot; &amp; tempusmerge$HRstatus==1, &quot;HER-/HR+&quot;, tempusmerge$subtype) #Characterizing the subtype variable
+
+tempusmerge$bw &lt;- ifelse (tempusmerge$race==&quot;Black&quot;, &quot;Black&quot;, NA) #Characterizing black/white alone
+tempusmerge$bw &lt;- ifelse (tempusmerge$race==&quot;White&quot;, &quot;White&quot;, tempusmerge$bw) 
+
+tempusmerge$vitalstatus &lt;- ifelse (tempusmerge$vitalstatus==&quot;0 Dead&quot;, &quot;0&quot;, &quot;1&quot;) #Factorizing vital status
 
 tempusmerge$stage14 &lt;- ifelse (tempusmerge$Stage %in% &quot;1A&quot;,1,NA)
 tempusmerge$stage14 &lt;- ifelse (tempusmerge$Stage %in% &quot;1B&quot;,1, tempusmerge$stage14)
@@ -1151,9 +1223,11 @@ Sheila Rajagopal
 <div id="mutations-summary" class="section level1">
 <h1>Mutations summary</h1>
 <p>Variables not incorporated for this analysis: Percentile mutational burden (incomplete)</p>
-<p>We have representation of 560 genes with mutations in this data set (including both primary tumors and lymph nodes). The most common mutations were as follows:</p>
-<pre><code>  TP53  KMT2D  ZFHX3  KMT2B PIK3CA   MCL1 ARID1A NOTCH1 BCORL1   SPEN 
-    90     74     68     55     53     52     37     37     35     34 </code></pre>
+<p>We have representation of 560 genes with mutations in this data set (including both primary tumors and lymph nodes). The most common mutations (incorporating BOTH pathogenic + VUS) were as follows:</p>
+<pre><code>      TP53       MCL1     PIK3CA ERBB2/HER2      ZFHX3        ATM 
+        72         44         39         33         27         23 
+    BCORL1       FAT1      KMT2B      KMT2D 
+        23         23         23         23 </code></pre>
 <p><img src="figure/Tempus.Rmd/Mutation%20summary%20and%20tumor%20purity-1.png" width="672" style="display: block; margin: auto;" /></p>
 <details> <summary><em>Expand here to see past versions of Mutation summary and tumor purity-1.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
@@ -1617,32 +1691,58 @@ Sheila Rajagopal
 </tr>
 </tbody>
 </table>
-<pre class="r"><code>allgenes &lt;- colSums(!((tempusmergedupclean[,105:663])==&quot;&quot;))
-allgenes[&quot;ERBB2/HER2&quot;] &lt;- sum(allgenes[&quot;ERBB2&quot;], allgenes[&quot;ERBB2 (HER2)&quot;], allgenes[&quot;ERBB2(HER2)&quot;], allgenes[&quot;ERBB2HER2)&quot;])
-head(sort(allgenes, decreasing=TRUE), 10)</code></pre>
-<pre><code>      TP53       MCL1     PIK3CA ERBB2/HER2      ZFHX3        ATM 
-        72         44         39         33         27         23 
-    BCORL1       FAT1      KMT2B      KMT2D 
-        23         23         23         23 </code></pre>
-<pre class="r"><code>#For checking purposes, I have reported the variants that I am seeing for BRCA1 and BRCA2 patients with StudyIDs. 
-genechecktable1 &lt;- tempusmergedupclean %&gt;% filter(!(BRCA1==&quot;&quot;)) %&gt;% select(StudyID, BRCA1)
-genechecktable1</code></pre>
-<div data-pagedtable="false">
-<script data-pagedtable-source type="application/json">
-{"columns":[{"label":["StudyID"],"name":[1],"type":["fctr"],"align":["left"]},{"label":["BRCA1"],"name":[2],"type":["chr"],"align":["left"]}],"data":[{"1":"MB-0211","2":"1\\t\\tp.D936H\\t\\tMissense variant\\t0.2086\\tNA, 2\\t\\tp.D853H\\t\\tMissense variant\\t0.1682\\tNA, 3\\t\\tp.R1076K\\t\\tMissense variant\\t0.1498\\tNA"},{"1":"MB-0459","2":"1\\tc.5074+2T>A\\t\\t\\tsplice region variant\\t0.6816\\t0"},{"1":"MB-0983","2":"1\\t\\t\\t\\tCopy number loss\\tNA\\tNA"},{"1":"MB-1074","2":"1\\tc.505C>T\\tp.Q169*\\tNM_007294\\tStop gain\\t0.038\\tNA"},{"1":"PN0147","2":"1\\tc.1961dupA\\tp.Y655fs\\tNM_007294\\tFrameshift\\t0.085\\tNA, 2\\tc.5353C>T\\tp.Q1785*\\tNM_007294\\tStop gain\\t0.042\\tNA, 3\\tc.364G>A\\tp.V122I\\tNM_007294\\tMissense variant\\t0.053\\tNA"},{"1":"PN0173","2":"1\\tc.2761C>T\\tp.Q921*\\tNM_007294\\tStop gain\\t0.035\\tNA"},{"1":"PN0176","2":"1\\tc.674C>T\\tp.A225V\\tNM_007294\\tMissense variant\\t0.144\\tNA"},{"1":"PN0189","2":"1\\tc.7464delG\\tp.I2489fs\\tNM_015001\\tStop gain\\t0.036\\tNA, 2\\tc.5246C>T\\tp.P1749L\\tNM_007294\\tMissense variant\\t0.072\\tNA"},{"1":"PN0210","2":"1\\tc.2879delG\\tp.G960fs\\tNM_007294\\tFrameshift\\t0.034\\tNA, 2\\tc.2386delA\\tp.T796fs\\tNM_007294\\tFrameshift\\t0.028\\tNA"},{"1":"PN0212","2":"1\\t\\t\\t\\tCopy number loss\\tNA\\tNA"},{"1":"PN0216","2":"1\\tc.4424-1G>A\\t\\tNM_007300\\tSplice region variant\\t0.04\\tNA"},{"1":"PN0226","2":"1\\tc.4698_4704dupTGGAATC\\tp.S1569fs\\tNM_007294\\tFrameshift\\t0.611\\tNA"},{"1":"PN0232","2":"1\\tc.5445G>A\\tp.W1815*\\tNM_007294\\tStop gain\\t0.044\\tNA"},{"1":"PN0268","2":"1\\tc.5406+1G>A\\t\\tNM_007294\\tSplice region\\t0.048\\tNA, 2\\tc.4898G>A\\tp.S1633N\\tNM_007294\\tMissense variant\\t0.054\\tNA"},{"1":"PN0281","2":"1\\t\\t\\t\\tCopy number loss\\tNA\\tNA"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
-  </script>
 </div>
-<pre class="r"><code>genechecktable2 &lt;- tempusmergedupclean %&gt;% filter(!(BRCA2==&quot;&quot;)) %&gt;% select(StudyID, BRCA2)
-genechecktable2</code></pre>
-<div data-pagedtable="false">
-<script data-pagedtable-source type="application/json">
-{"columns":[{"label":["StudyID"],"name":[1],"type":["fctr"],"align":["left"]},{"label":["BRCA2"],"name":[2],"type":["chr"],"align":["left"]}],"data":[{"1":"MB-0038","2":"1\\tc.8504C>T\\tp.S2835L\\tNM_000059\\tMissense variant\\t0.199\\tNA"},{"1":"MB-0593","2":"1\\t\\tp.K1984fs\\t\\tFrameshift\\t0.0797\\tNA"},{"1":"MB-1067","2":"1\\t\\tp.T3033fs\\t\\tFrameshift - LOF\\t0.0896\\t0"},{"1":"MB-1078","2":"1\\tc.9945delA\\tp.E3316fs\\tNM_000059\\tFrameshift\\t0.123\\tNA"},{"1":"PN0159","2":"1\\tc.9097dupA\\tp.T3033fs\\tNM_000059\\tFrameshift- LOF\\t0.079\\tNA"},{"1":"PN0170","2":"1\\tc.4405G>A\\tp.D1469N\\tNM_000059\\tMissense variant\\t0.078\\tNA"},{"1":"PN0189","2":"1\\tc.3075delG\\tp.K1026fs\\tNM_000059\\tFrameshift\\t0.041\\tNA"},{"1":"PN0213","2":"1\\tc.8632+1G>A\\t\\tNM_000059\\tSplice region variant\\t0.048\\tNA, 2\\tc.7805+1G>A\\t\\tNM_000059\\tSplice region variant\\t0.034\\tNA, 3\\tc.165C>A\\tp.N55K\\tNM_000059\\tMissense variant\\t0.06\\tNA"},{"1":"PN0216","2":"1\\tc.9499G>A\\tp.E3167K\\tNM_000059\\tSplice region variant\\t0.097\\tNA"},{"1":"PN0268","2":"1\\tc.3541C>T\\tp.Q1181*\\tNM_000059\\tStop gain\\t0.038\\tNA, 2\\tc.1832C>T\\tp.S611L\\tNM_000059\\tMissense variant\\t0.057\\tNA"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
-  </script>
+<div id="recurrence-and-survival-among-different-clinical-subgroups" class="section level1">
+<h1>Recurrence and survival among different clinical subgroups</h1>
+<pre class="r"><code>surv_object &lt;- Surv(time = tempusmergedupclean$timefu, event = tempusmergedupclean$recurrenceposneg)
+
+fit.coxph &lt;- coxph(surv_object ~ tempusmergedupclean$age50 + tempusmergedupclean$neoadj + tempusmergedupclean$subtype + tempusmergedupclean$bw + tempusmergedupclean$stage14,
+                   data = tempusmergedupclean)
+                   
+ggforest(fit.coxph, data = tempusmergedupclean, main=&quot;Hazard ratios of clinical variables prior to assessing mutational variables - Recurrence &quot;)</code></pre>
+<pre><code>Warning: Removed 1 rows containing missing values (geom_errorbar).</code></pre>
+<p><img src="figure/Tempus.Rmd/unnamed-chunk-1-1.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of unnamed-chunk-1-1.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+99339fe
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-02-10
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
+<pre class="r"><code>surv_object &lt;- Surv(time = tempusmergedupclean$timefu, event = as.numeric(tempusmergedupclean$vitalstatus))
+
+fit.coxph &lt;- coxph(surv_object ~ tempusmergedupclean$age50 + tempusmergedupclean$neoadj + tempusmergedupclean$subtype + tempusmergedupclean$bw + tempusmergedupclean$stage14,
+                   data = tempusmergedupclean)
+                   
+ggforest(fit.coxph, data = tempusmergedupclean, main=&quot;Hazard ratios of clinical variables prior to assessing mutational variables - Survival&quot;)</code></pre>
+<pre><code>Warning: Removed 1 rows containing missing values (geom_errorbar).</code></pre>
+<p><img src="figure/Tempus.Rmd/unnamed-chunk-1-2.png" width="672" style="display: block; margin: auto;" /></p>
 </div>
-<p>Distribution of the top uniquely mutated genes in our cohort. (Variants within gene not added to count.)</p>
-</div>
-<div id="mutations-among-different-subgroups-verification-from-dezheng-huo" class="section level1">
-<h1>Mutations among different subgroups (verification from Dezheng Huo)</h1>
+<div id="mutations-among-different-subgroups---subtype-and-race-not-significant" class="section level1">
+<h1>Mutations among different subgroups - Subtype and race (Not significant)</h1>
 <pre class="r"><code>subtypeHERposHRneg &lt;- tempusmergedupclean %&gt;% filter(subtype==&quot;HER+/HR-&quot;)
 allgenesHERposHRneg &lt;- colSums(!((subtypeHERposHRneg[,105:663])==&quot;&quot;))
 allgenesHERposHRneg[&quot;ERBB2/HER2&quot;] &lt;- sum(allgenesHERposHRneg[&quot;ERBB2&quot;], allgenesHERposHRneg[&quot;ERBB2 (HER2)&quot;], allgenesHERposHRneg[&quot;ERBB2(HER2)&quot;], allgenesHERposHRneg[&quot;ERBB2HER2)&quot;])
@@ -1703,17 +1803,96 @@ data:  headwhite and headblack
 X-squared = 15, df = 12, p-value = 0.2414</code></pre>
 <p>We did not see a significant difference in our cohort between breast cancer subtype or race between the top 5 most mutated genes.</p>
 </div>
-<div id="extremely-mutated-patients-x-2---case-examples" class="section level1">
-<h1>Extremely mutated patients x 2 - case examples</h1>
-<pre class="r"><code>tempusmergedupclean$StudyID[tempusmergedupclean$genecount==max(tempusmergedupclean$genecount)]</code></pre>
-<pre><code>[1] PN0268
-127 Levels: MB-0009 MB-0038 MB-0084 MB-0118 MB-0122 MB-0132 ... PN0308</code></pre>
-<p>The patient who had the most unique genes mutated in her tumor in our sample (with 184) was black, was living as of last f/u with iniital diagnosis in 2001 and f/u in 2011. HR+/HER2- disease without known recurrence. Her TMB was 71.3 and in the 100th percentile, MSI status was equivocal. The patient who had the highest number of variants (9) within a single gene was white, was dead with initial diagnosis in 2000 and f/u in 2006 with HR+, HER2 unknown disease with unknown recurrence status. Her TMB was 58.3 and in the 100th percentile; genecount was 3rd highest in the group, MSI status was normal. Both patients were cigarette smokers although cigarette smoking was not significantly associated with any of our mutation variables.</p>
+<div id="mutations-among-different-subgroups---patients-younger-than-50" class="section level1">
+<h1>Mutations among different subgroups - Patients younger than 50</h1>
+<pre class="r"><code>subtypeyoung &lt;- tempusmergedupclean %&gt;% filter(age50==1)
+allgenesyoung&lt;- colSums(!((subtypeyoung[,105:663])==&quot;&quot;))
+allgenesyoung[&quot;ERBB2/HER2&quot;] &lt;- sum(allgenesyoung[&quot;ERBB2&quot;], allgenesyoung[&quot;ERBB2 (HER2)&quot;], allgenesyoung[&quot;ERBB2(HER2)&quot;], allgenesyoung[&quot;ERBB2HER2)&quot;])
+headyoung &lt;- head(sort(allgenesyoung, decreasing=TRUE), 5)
+headyoung</code></pre>
+<pre><code>  TP53   MCL1  KMT2D    FLG NOTCH1 
+    32     20     13     12     12 </code></pre>
+<pre class="r"><code>subtypeold &lt;- tempusmergedupclean %&gt;% filter(age50==0)
+allgenesold&lt;- colSums(!((subtypeold[,105:663])==&quot;&quot;))
+allgenesold[&quot;ERBB2/HER2&quot;] &lt;- sum(allgenesold[&quot;ERBB2&quot;], allgenesold[&quot;ERBB2 (HER2)&quot;], allgenesold[&quot;ERBB2(HER2)&quot;], allgenesold[&quot;ERBB2HER2)&quot;])
+headold &lt;- head(sort(allgenesold, decreasing=TRUE), 5)
+headold</code></pre>
+<pre><code>      TP53     PIK3CA       MCL1 ERBB2/HER2       FAT1 
+        40         28         24         23         17 </code></pre>
+<pre class="r"><code>chisq.test(headold, headyoung)</code></pre>
+<pre><code>
+    Pearson&#39;s Chi-squared test
+
+data:  headold and headyoung
+X-squared = 15, df = 12, p-value = 0.2414</code></pre>
+<p>We did not see a a statistically significant difference in the distribution of genes in the younger patients relative to the older patients (for the top 5 genes).</p>
+<pre class="r"><code>tempusneo &lt;- tempusmergedupclean %&gt;% filter(tempusmergedupclean$neoadj==1 &amp; !(StudyID==&quot;MB-0138&quot;) &amp; !(StudyID==&quot;MB-1020&quot;) &amp; !(StudyID==&quot;MB-1049&quot;))
+
+kable(table(tempusneo$recurrenceposneg), caption = &quot;Neoadjuvant patients who experienced recurrence&quot;, col.names=c(&quot;Recurrence&quot;, &quot;Freq&quot;))</code></pre>
+<table>
+<caption>Neoadjuvant patients who experienced recurrence</caption>
+<thead>
+<tr class="header">
+<th align="left">Recurrence</th>
+<th align="right">Freq</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">0</td>
+<td align="right">15</td>
+</tr>
+<tr class="even">
+<td align="left">1</td>
+<td align="right">8</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>kable(table(tempusneo$vitalstatus), caption = &quot;Neoadjuvant patients who experienced recurrence&quot;, col.names=c(&quot;Recurrence&quot;, &quot;Freq&quot;))</code></pre>
+<table>
+<caption>Neoadjuvant patients who experienced recurrence</caption>
+<thead>
+<tr class="header">
+<th align="left">Recurrence</th>
+<th align="right">Freq</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">0</td>
+<td align="right">8</td>
+</tr>
+<tr class="even">
+<td align="left">1</td>
+<td align="right">15</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>neoadjTP53&lt;- tempusneo[,&quot;TP53&quot;]
+neoadjTP53 &lt;- ifelse (!(neoadjTP53==&quot;&quot;), 1, 0)
+
+surv_object &lt;- Surv(time = tempusneo$timefu, event = tempusneo$recurrenceposneg)
+fit2&lt;- survfit(Surv(tempusneo$TMB) ~ recurrenceposneg, data = tempusneo)
+ggsurvplot(fit2, pval=TRUE)</code></pre>
+<p><img src="figure/Tempus.Rmd/Neoadjuvant%20patients-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>fit.coxph &lt;- coxph(surv_object ~ tempusneo$TMB,
+                   data = tempusneo)
+                   
+ggforest(fit.coxph, data = tempusneo, main=&quot;Hazard ratios of TMB in neoadjuvant patients - Recurrence&quot;)</code></pre>
+<p><img src="figure/Tempus.Rmd/Neoadjuvant%20patients-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>surv_object &lt;- Surv(time = tempusneo$timefu, event = as.numeric(tempusneo$vitalstatus))
+fit2&lt;- survfit(Surv(tempusneo$TMB) ~ vitalstatus, data = tempusneo)
+ggsurvplot(fit2, pval=TRUE)</code></pre>
+<p><img src="figure/Tempus.Rmd/Neoadjuvant%20patients-3.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>fit.coxph &lt;- coxph(surv_object ~ tempusneo$TMB,
+                   data = tempusneo)
+                   
+ggforest(fit.coxph, data = tempusneo, main=&quot;Hazard ratios of TMB in neoadjuvant patients - Recurrence&quot;)</code></pre>
+<p><img src="figure/Tempus.Rmd/Neoadjuvant%20patients-4.png" width="672" style="display: block; margin: auto;" /> TMB was nonsignifiantly associated with recurrence when increased in neoadjuvant patients, but our sample size was very small. This relationship was inverted but also nonsignificant for survival.</p>
 </div>
 <div id="heterogeneity-between-sentinel-lymph-nodes-and-primary-tumors" class="section level1">
 <h1>Heterogeneity between sentinel lymph nodes and primary tumors</h1>
 <pre class="r"><code>tempusbreastlymph &lt;- tempusmerge %&gt;% filter((StudyID %in% duplicates$StudyID) &amp; !(Tumorspecimen==&quot;&quot;) &amp; !(StudyID==&quot;PN0263&quot;))
-
   subtypelymph &lt;- tempusbreastlymph %&gt;% filter(Tumorspecimen==&quot;Lymph node&quot;)
   subtypebreast &lt;- tempusbreastlymph %&gt;% filter(Tumorspecimen==&quot;Breast&quot;)
 
@@ -1727,7 +1906,7 @@ X-squared = 15, df = 12, p-value = 0.2414</code></pre>
   print(head(sort(allgeneslymph, decreasing=TRUE)))</code></pre>
 <pre><code>PIK3CA   TP53 ARID1A ARID5B  ASXL1    ATM 
      4      2      1      1      1      1 </code></pre>
-<p>We did see heterogeneity between the mutations represented in the lymph nodes and the mutations represented in the primary breast tumors for those samples.</p>
+<p>We did see heterogeneity between the mutations represented in the lymph nodes and the mutations represented in the primary breast tumors for those samples. Two of the lymph nodes had 20% purity, 2 had 40% purity and 2 had 50% purity.</p>
 </div>
 <div id="exploring-what-mutation-distribution-means-from-a-clinical-standpoint" class="section level1">
 <h1>Exploring what mutation distribution means from a clinical standpoint</h1>
@@ -1922,8 +2101,11 @@ Sheila Rajagopal
 <p></details></p>
 <p>Blue relfects gene count, red reflects max variant count. These track in a relatively linear fashion with TMB.</p>
 <pre class="r"><code>surv_object &lt;- Surv(time = tempusmergedupclean$timefu, event = tempusmergedupclean$recurrenceposneg)
-fit1&lt;- survfit(Surv(log(tempusmergedupclean$genecount)) ~ recurrenceposneg, data = tempusmergedupclean)
-ggsurvplot(fit1, pval=TRUE)</code></pre>
+
+fit.coxph &lt;- coxph(surv_object ~ tempusmergedupclean$genecount + tempusmergedupclean$TMB + tempusmergedupclean$maxvariantcount, 
+                   data = tempusmergedupclean)
+                   
+ggforest(fit.coxph, data = tempusmergedupclean, main=&quot;Comparative hazard ratios of recurrence associated \n with markers of mutational heterogeneity&quot;)</code></pre>
 <p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-3-1.png" width="672" style="display: block; margin: auto;" /></p>
 <details> <summary><em>Expand here to see past versions of Mutation distribution per patient-3-1.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
@@ -1955,8 +2137,8 @@ Sheila Rajagopal
 </tbody>
 </table>
 <p></details></p>
-<pre class="r"><code>fit2&lt;- survfit(Surv(log(tempusmergedupclean$maxvariantcount)) ~ recurrenceposneg, data = tempusmergedupclean)
-ggsurvplot(fit2, pval=TRUE)</code></pre>
+<pre class="r"><code>fit1&lt;- survfit(Surv(tempusmergedupclean$genecount) ~ recurrenceposneg, data = tempusmergedupclean)
+ggsurvplot(fit1, pval=TRUE)</code></pre>
 <p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-3-2.png" width="672" style="display: block; margin: auto;" /></p>
 <details> <summary><em>Expand here to see past versions of Mutation distribution per patient-3-2.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
@@ -1988,8 +2170,8 @@ Sheila Rajagopal
 </tbody>
 </table>
 <p></details></p>
-<pre class="r"><code>fit3&lt;- survfit(Surv(tempusmergedupclean$TMB) ~ recurrenceposneg, data = tempusmergedupclean)
-ggsurvplot(fit3, pval=TRUE)</code></pre>
+<pre class="r"><code>fit2&lt;- survfit(Surv(log(tempusmergedupclean$maxvariantcount)) ~ recurrenceposneg, data = tempusmergedupclean)
+ggsurvplot(fit2, pval=TRUE)</code></pre>
 <p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-3-3.png" width="672" style="display: block; margin: auto;" /></p>
 <details> <summary><em>Expand here to see past versions of Mutation distribution per patient-3-3.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
@@ -2021,9 +2203,8 @@ Sheila Rajagopal
 </tbody>
 </table>
 <p></details></p>
-<pre class="r"><code>surv_object &lt;- Surv(time = tempusmergedupclean$timefu, event = tempusmergedupclean$vitalstatus)
-fit1&lt;- survfit(Surv(log(tempusmergedupclean$genecount)) ~ vitalstatus, data = tempusmergedupclean)
-ggsurvplot(fit1, pval=TRUE)</code></pre>
+<pre class="r"><code>fit3&lt;- survfit(Surv(tempusmergedupclean$TMB) ~ recurrenceposneg, data = tempusmergedupclean)
+ggsurvplot(fit3, pval=TRUE)</code></pre>
 <p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-3-4.png" width="672" style="display: block; margin: auto;" /></p>
 <details> <summary><em>Expand here to see past versions of Mutation distribution per patient-3-4.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
@@ -2055,8 +2236,12 @@ Sheila Rajagopal
 </tbody>
 </table>
 <p></details></p>
-<pre class="r"><code>fit2&lt;- survfit(Surv(log(tempusmergedupclean$maxvariantcount)) ~ vitalstatus, data = tempusmergedupclean)
-ggsurvplot(fit2, pval=TRUE)</code></pre>
+<pre class="r"><code>surv_object &lt;- Surv(time = tempusmergedupclean$timefu, event = as.numeric(tempusmergedupclean$vitalstatus))
+
+fit.coxph &lt;- coxph(surv_object ~ tempusmergedupclean$genecount + tempusmergedupclean$TMB + tempusmergedupclean$maxvariantcount, 
+                   data = tempusmergedupclean)
+                   
+ggforest(fit.coxph, data = tempusmergedupclean, main=&quot;Comparative hazard ratios of recurrence associated \n with markers of mutational heterogeneity&quot;)</code></pre>
 <p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-3-5.png" width="672" style="display: block; margin: auto;" /></p>
 <details> <summary><em>Expand here to see past versions of Mutation distribution per patient-3-5.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
@@ -2088,8 +2273,8 @@ Sheila Rajagopal
 </tbody>
 </table>
 <p></details></p>
-<pre class="r"><code>fit3&lt;- survfit(Surv(tempusmergedupclean$TMB) ~ vitalstatus, data = tempusmergedupclean)
-ggsurvplot(fit3, pval=TRUE)</code></pre>
+<pre class="r"><code>fit1&lt;- survfit(Surv(tempusmergedupclean$genecount) ~ vitalstatus, data = tempusmergedupclean)
+ggsurvplot(fit1, pval=TRUE)</code></pre>
 <p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-3-6.png" width="672" style="display: block; margin: auto;" /></p>
 <details> <summary><em>Expand here to see past versions of Mutation distribution per patient-3-6.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
@@ -2121,38 +2306,8 @@ Sheila Rajagopal
 </tbody>
 </table>
 <p></details></p>
-<pre class="r"><code>mylogit &lt;- glm(tempusmergedupclean$recurrenceposneg ~ tempusmergedupclean$genecount + tempusmergedupclean$age50 + tempusmergedupclean$race +tempusmergedupclean$stage14, data = tempusmergedupclean, family = &quot;binomial&quot;)
-summary(mylogit)</code></pre>
-<pre><code>
-Call:
-glm(formula = tempusmergedupclean$recurrenceposneg ~ tempusmergedupclean$genecount + 
-    tempusmergedupclean$age50 + tempusmergedupclean$race + tempusmergedupclean$stage14, 
-    family = &quot;binomial&quot;, data = tempusmergedupclean)
-
-Deviance Residuals: 
-    Min       1Q   Median       3Q      Max  
--1.2717  -0.9342  -0.6984   1.1465   1.9367  
-
-Coefficients:
-                                Estimate Std. Error z value Pr(&gt;|z|)  
-(Intercept)                    -16.01170 1455.39781  -0.011   0.9912  
-tempusmergedupclean$genecount   -0.01641    0.01058  -1.551   0.1210  
-tempusmergedupclean$age50        0.28153    0.41839   0.673   0.5010  
-tempusmergedupclean$raceBlack   14.57902 1455.39762   0.010   0.9920  
-tempusmergedupclean$raceWhite   14.23260 1455.39762   0.010   0.9922  
-tempusmergedupclean$stage14      0.50049    0.29449   1.700   0.0892 .
----
-Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-
-(Dispersion parameter for binomial family taken to be 1)
-
-    Null deviance: 149.07  on 118  degrees of freedom
-Residual deviance: 138.07  on 113  degrees of freedom
-  (8 observations deleted due to missingness)
-AIC: 150.07
-
-Number of Fisher Scoring iterations: 14</code></pre>
-<pre class="r"><code>plot(tempusmergedupclean$stage14, tempusmergedupclean$genecount)</code></pre>
+<pre class="r"><code>fit2&lt;- survfit(Surv(log(tempusmergedupclean$maxvariantcount)) ~ vitalstatus, data = tempusmergedupclean)
+ggsurvplot(fit2, pval=TRUE)</code></pre>
 <p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-3-7.png" width="672" style="display: block; margin: auto;" /></p>
 <details> <summary><em>Expand here to see past versions of Mutation distribution per patient-3-7.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
@@ -2184,108 +2339,116 @@ Sheila Rajagopal
 </tbody>
 </table>
 <p></details></p>
-<p>We saw significant associations between recurrence and gene count, variant count and TMB. We did not see a signfiicant association wtih TMB and survival but a trend. When you performed a logistic regression stratifying for age, race and stage, these did not maintain significance, but this may be due to the smaller sample size as genecount did not correlate closely with stage and would not expected to be completely substituted for by this variable in this data set.</p>
-</div>
-<div id="gene-mutations-in-younger-patients" class="section level1">
-<h1>Gene mutations in younger patients</h1>
-<pre class="r"><code>subtypeyoung &lt;- tempusmergedupclean %&gt;% filter(age50==1)
-allgenesyoung&lt;- colSums(!((subtypeyoung[,105:663])==&quot;&quot;))
-allgenesyoung[&quot;ERBB2/HER2&quot;] &lt;- sum(allgenesyoung[&quot;ERBB2&quot;], allgenesyoung[&quot;ERBB2 (HER2)&quot;], allgenesyoung[&quot;ERBB2(HER2)&quot;], allgenesyoung[&quot;ERBB2HER2)&quot;])
-headyoung &lt;- head(sort(allgenesyoung, decreasing=TRUE), 5)
-headyoung</code></pre>
-<pre><code>  TP53   MCL1  KMT2D    FLG NOTCH1 
-    32     20     13     12     12 </code></pre>
-<pre class="r"><code>subtypeold &lt;- tempusmergedupclean %&gt;% filter(age50==0)
-allgenesold&lt;- colSums(!((subtypeold[,105:663])==&quot;&quot;))
-allgenesold[&quot;ERBB2/HER2&quot;] &lt;- sum(allgenesold[&quot;ERBB2&quot;], allgenesold[&quot;ERBB2 (HER2)&quot;], allgenesold[&quot;ERBB2(HER2)&quot;], allgenesold[&quot;ERBB2HER2)&quot;])
-headold &lt;- head(sort(allgenesold, decreasing=TRUE), 5)
-headold</code></pre>
-<pre><code>      TP53     PIK3CA       MCL1 ERBB2/HER2       FAT1 
-        40         28         24         23         17 </code></pre>
-<pre class="r"><code>surv_object &lt;- Surv(time = tempusmergedupclean$timefu, event = tempusmergedupclean$vitalstatus)
-fit1&lt;- survfit(Surv(log(tempusmergedupclean$age_at_diagnosis)) ~ vitalstatus, data = tempusmergedupclean)
-ggsurvplot(fit1, pval=TRUE)</code></pre>
-<p><img src="figure/Tempus.Rmd/Mutation%20distribution%20in%20patients%20%3C%2050-1.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of Mutation distribution in patients &lt; 50-1.png:</em></summary>
-<table style="border-collapse:separate; border-spacing:5px;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Version
-</th>
-<th style="text-align:left;">
-Author
-</th>
-<th style="text-align:left;">
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-7fbf15a
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-10
-</td>
-</tr>
-</tbody>
-</table>
-<p></details></p>
-<pre class="r"><code>chisq.test(headold, headyoung)</code></pre>
-<pre><code>
-    Pearson&#39;s Chi-squared test
-
-data:  headold and headyoung
-X-squared = 15, df = 12, p-value = 0.2414</code></pre>
-<pre class="r"><code>mylogit &lt;- glm(tempusmergedupclean$vitalstatus ~ tempusmergedupclean$genecount + tempusmergedupclean$TMB + tempusmergedupclean$age_at_diagnosis + tempusmergedupclean$race +tempusmergedupclean$stage14, data = tempusmergedupclean, family = &quot;binomial&quot;)
+<pre class="r"><code>fit3&lt;- survfit(Surv(tempusmergedupclean$TMB) ~ vitalstatus, data = tempusmergedupclean)
+ggsurvplot(fit3, pval=TRUE)</code></pre>
+<p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-3-8.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>mylogit &lt;- glm(tempusmergedupclean$recurrenceposneg ~ tempusmergedupclean$genecount + +tempusmergedupclean$subtype + tempusmergedupclean$age50 + tempusmergedupclean$race +tempusmergedupclean$stage14, data = tempusmergedupclean, family = &quot;binomial&quot;)
 summary(mylogit)</code></pre>
 <pre><code>
 Call:
-glm(formula = tempusmergedupclean$vitalstatus ~ tempusmergedupclean$genecount + 
-    tempusmergedupclean$TMB + tempusmergedupclean$age_at_diagnosis + 
+glm(formula = tempusmergedupclean$recurrenceposneg ~ tempusmergedupclean$genecount + 
+    +tempusmergedupclean$subtype + tempusmergedupclean$age50 + 
     tempusmergedupclean$race + tempusmergedupclean$stage14, family = &quot;binomial&quot;, 
     data = tempusmergedupclean)
 
 Deviance Residuals: 
     Min       1Q   Median       3Q      Max  
--1.9802  -1.1047   0.6659   0.8709   1.5483  
+-1.3937  -0.8758  -0.6649   1.1017   2.0726  
 
 Coefficients:
-                                       Estimate Std. Error z value
-(Intercept)                           1.785e+01  1.455e+03   0.012
-tempusmergedupclean$genecount         9.429e-03  2.182e-02   0.432
-tempusmergedupclean$TMB              -3.208e-02  5.764e-02  -0.557
-tempusmergedupclean$age_at_diagnosis -4.147e-02  1.458e-02  -2.845
-tempusmergedupclean$raceBlack        -1.411e+01  1.455e+03  -0.010
-tempusmergedupclean$raceWhite        -1.344e+01  1.455e+03  -0.009
-tempusmergedupclean$stage14          -6.203e-01  2.873e-01  -2.159
-                                     Pr(&gt;|z|)   
-(Intercept)                           0.99022   
-tempusmergedupclean$genecount         0.66558   
-tempusmergedupclean$TMB               0.57778   
-tempusmergedupclean$age_at_diagnosis  0.00444 **
-tempusmergedupclean$raceBlack         0.99226   
-tempusmergedupclean$raceWhite         0.99263   
-tempusmergedupclean$stage14           0.03082 * 
----
-Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+                                      Estimate Std. Error z value Pr(&gt;|z|)
+(Intercept)                          -15.06964 1455.39797  -0.010    0.992
+tempusmergedupclean$genecount         -0.01568    0.01054  -1.487    0.137
+tempusmergedupclean$subtypeHER+/HR-   -0.96830    0.87338  -1.109    0.268
+tempusmergedupclean$subtypeHER+/HR+   -0.89922    0.60476  -1.487    0.137
+tempusmergedupclean$subtypeTNBC        0.02569    0.49860   0.052    0.959
+tempusmergedupclean$age50              0.26406    0.43592   0.606    0.545
+tempusmergedupclean$raceBlack         13.99316 1455.39771   0.010    0.992
+tempusmergedupclean$raceWhite         13.61720 1455.39772   0.009    0.993
+tempusmergedupclean$stage14            0.46914    0.30355   1.545    0.122
 
 (Dispersion parameter for binomial family taken to be 1)
 
-    Null deviance: 166.29  on 126  degrees of freedom
-Residual deviance: 150.35  on 120  degrees of freedom
-AIC: 164.35
+    Null deviance: 145.93  on 114  degrees of freedom
+Residual deviance: 132.25  on 106  degrees of freedom
+  (12 observations deleted due to missingness)
+AIC: 150.25
 
 Number of Fisher Scoring iterations: 14</code></pre>
-<p>Younger patients in general were more likely to do worse in this study. We did not see a a statistically significant difference in the distribution of genes in the younger patients relative to the older patients (for the top 5 genes). In a logistic regression, while overall gene counts did not make a difference, age at diagnosis could be accounted for separately from stage.</p>
-<pre class="r"><code>#Greater exploration of discrepancies in mutation status and subtype assignment
-#Residual disease after chemotherapy and assessment of mutation changes here 
-#How do mutation types affect outcomes</code></pre>
+<pre class="r"><code>mylogit &lt;- glm(tempusmergedupclean$recurrenceposneg ~ tempusmergedupclean$TMB + +tempusmergedupclean$subtype + tempusmergedupclean$age50 + tempusmergedupclean$race +tempusmergedupclean$stage14, data = tempusmergedupclean, family = &quot;binomial&quot;)
+summary(mylogit)</code></pre>
+<pre><code>
+Call:
+glm(formula = tempusmergedupclean$recurrenceposneg ~ tempusmergedupclean$TMB + 
+    +tempusmergedupclean$subtype + tempusmergedupclean$age50 + 
+    tempusmergedupclean$race + tempusmergedupclean$stage14, family = &quot;binomial&quot;, 
+    data = tempusmergedupclean)
+
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-1.3747  -0.8964  -0.6463   1.1281   2.1818  
+
+Coefficients:
+                                      Estimate Std. Error z value Pr(&gt;|z|)
+(Intercept)                          -15.49381 1455.39789  -0.011    0.992
+tempusmergedupclean$TMB               -0.03359    0.02620  -1.282    0.200
+tempusmergedupclean$subtypeHER+/HR-   -0.96809    0.86911  -1.114    0.265
+tempusmergedupclean$subtypeHER+/HR+   -0.88973    0.60364  -1.474    0.140
+tempusmergedupclean$subtypeTNBC        0.07328    0.49484   0.148    0.882
+tempusmergedupclean$age50              0.26805    0.43440   0.617    0.537
+tempusmergedupclean$raceBlack         14.24868 1455.39768   0.010    0.992
+tempusmergedupclean$raceWhite         13.91134 1455.39769   0.010    0.992
+tempusmergedupclean$stage14            0.48465    0.30347   1.597    0.110
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 145.93  on 114  degrees of freedom
+Residual deviance: 133.12  on 106  degrees of freedom
+  (12 observations deleted due to missingness)
+AIC: 151.12
+
+Number of Fisher Scoring iterations: 14</code></pre>
+<pre class="r"><code>mylogit &lt;- glm(tempusmergedupclean$recurrenceposneg ~ tempusmergedupclean$maxvariantcount + +tempusmergedupclean$subtype + tempusmergedupclean$age50 + tempusmergedupclean$race +tempusmergedupclean$stage14, data = tempusmergedupclean, family = &quot;binomial&quot;)
+summary(mylogit)</code></pre>
+<pre><code>
+Call:
+glm(formula = tempusmergedupclean$recurrenceposneg ~ tempusmergedupclean$maxvariantcount + 
+    +tempusmergedupclean$subtype + tempusmergedupclean$age50 + 
+    tempusmergedupclean$race + tempusmergedupclean$stage14, family = &quot;binomial&quot;, 
+    data = tempusmergedupclean)
+
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-1.4050  -0.9009  -0.6605   1.1825   2.0525  
+
+Coefficients:
+                                      Estimate Std. Error z value Pr(&gt;|z|)
+(Intercept)                          -15.44029 1455.39791  -0.011    0.992
+tempusmergedupclean$maxvariantcount   -0.25706    0.20141  -1.276    0.202
+tempusmergedupclean$subtypeHER+/HR-   -0.92166    0.86749  -1.062    0.288
+tempusmergedupclean$subtypeHER+/HR+   -0.82229    0.60229  -1.365    0.172
+tempusmergedupclean$subtypeTNBC        0.07856    0.49497   0.159    0.874
+tempusmergedupclean$age50              0.22407    0.43263   0.518    0.605
+tempusmergedupclean$raceBlack         14.43553 1455.39767   0.010    0.992
+tempusmergedupclean$raceWhite         14.04969 1455.39767   0.010    0.992
+tempusmergedupclean$stage14            0.49328    0.30423   1.621    0.105
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 145.93  on 114  degrees of freedom
+Residual deviance: 133.53  on 106  degrees of freedom
+  (12 observations deleted due to missingness)
+AIC: 151.53
+
+Number of Fisher Scoring iterations: 14</code></pre>
+<p>We saw significant associations between recurrence and gene count, variant count and TMB in univariate analyses. With a logistic regression stratifying for age, race, subtype and stage, these did not maintain significance, but this may be due to the smaller sample size as genecount and TMB did not correlate closely with stage and would not expected to be completely substituted for by this variable in this data set.</p>
+</div>
+<div id="extremely-mutated-patients-x-2---case-examples" class="section level1">
+<h1>Extremely mutated patients x 2 - case examples</h1>
+<pre class="r"><code>tempusmergedupclean$StudyID[tempusmergedupclean$genecount==max(tempusmergedupclean$genecount)]</code></pre>
+<pre><code>[1] PN0268
+127 Levels: MB-0009 MB-0038 MB-0084 MB-0118 MB-0122 MB-0132 ... PN0308</code></pre>
+<p>The patient who had the most unique genes mutated in her tumor in our sample (with 184) was black, was living as of last f/u with iniital diagnosis in 2001 and f/u in 2011. HR+/HER2- disease without known recurrence. Her TMB was 71.3 and in the 100th percentile, MSI status was equivocal. The patient who had the highest number of variants (9) within a single gene was white, was dead with initial diagnosis in 2000 and f/u in 2006 with HR+, HER2 unknown disease with unknown recurrence status. Her TMB was 58.3 and in the 100th percentile; genecount was 3rd highest in the group, MSI status was normal. Both patients were cigarette smokers although cigarette smoking was not significantly associated with any of our mutation variables.</p>
 <pre class="r"><code>sameptsamegenemultivariant &lt;- tempusmutation %&gt;% group_by (StudyID, Gene) %&gt;% filter((duplicated(StudyID) &amp; duplicated(Gene) &amp; duplicated(AccessionNo)) | (duplicated(StudyID, fromLast=TRUE) &amp; duplicated(AccessionNo, fromLast=TRUE) &amp; duplicated(Gene, fromLast=TRUE))) %&gt;% dplyr::select(&quot;StudyID&quot;, &quot;AccessionNo&quot;, &quot;Tumorspecimen&quot;, &quot;Gene&quot;, &quot;variant_name_C&quot;, &quot;variant_name_P&quot;, &quot;NM_number&quot;, &quot;typeofvariant&quot;, &quot;genecount&quot;, &quot;variantcount&quot;)</code></pre>
 <div id="session-information" class="section level2">
 <h2>Session information</h2>
@@ -2322,12 +2485,13 @@ loaded via a namespace (and not attached):
 [28] Rcpp_1.0.0        xtable_1.8-3      scales_1.0.0     
 [31] backports_1.1.3   jsonlite_1.6      cmprsk_2.2-7     
 [34] km.ci_0.5-2       gridExtra_2.3     digest_0.6.18    
-[37] stringi_1.2.4     KMsurv_0.1-5      grid_3.5.0       
-[40] rprojroot_1.3-2   tools_3.5.0       lazyeval_0.2.1   
-[43] tibble_2.0.1      crayon_1.3.4      whisker_0.3-2    
-[46] pkgconfig_2.0.2   Matrix_1.2-15     data.table_1.12.0
-[49] assertthat_0.2.0  rmarkdown_1.11    R6_2.3.0         
-[52] nlme_3.1-137      git2r_0.24.0      compiler_3.5.0   </code></pre>
+[37] stringi_1.2.4     KMsurv_0.1-5      cowplot_0.9.4    
+[40] grid_3.5.0        rprojroot_1.3-2   tools_3.5.0      
+[43] lazyeval_0.2.1    tibble_2.0.1      crayon_1.3.4     
+[46] whisker_0.3-2     pkgconfig_2.0.2   Matrix_1.2-15    
+[49] data.table_1.12.0 assertthat_0.2.0  rmarkdown_1.11   
+[52] R6_2.3.0          nlme_3.1-137      git2r_0.24.0     
+[55] compiler_3.5.0   </code></pre>
 </div>
 </div>
 
