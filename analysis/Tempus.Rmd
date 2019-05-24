@@ -1,5 +1,5 @@
 ---
-title: "Tempus Data Analysis"
+title: "Tempus Data Analysis 5/23/2019"
 site: workflowr::wflow_site
 output:
   workflowr::wflow_html:
@@ -13,7 +13,7 @@ output:
 knitr::opts_chunk$set
 knitr::kable
 
-setwd("~/Research-Local/Tempus-Local/Tempus")
+setwd("~/Dropbox/UCOncology/Research/Abstracts/Tempus/Tempus-Analysis")
 library(tidyr)
 library(dplyr)
 library(knitr)
@@ -24,6 +24,7 @@ library(stringr)
 tempusclinical <- as.data.frame(read.csv(file="~/Research-Local/Tempus-Local/Input/ChicagoMultiethnic_clinical_2019Feb05.csv", header=TRUE, sep=",")) #127 patients
 tempusmutation <- as.data.frame(read.csv(file="~/Research-Local/Tempus-Local/Input/TempusReportDataset-2019Feb1_Final_mutation.csv", header=TRUE, sep=","))
 tempusreports <- as.data.frame(read.csv(file="~/Research-Local/Tempus-Local/Input/TempusReportDataset-2019Feb1_Final_report.csv", header=TRUE, sep=",")) #139 reports = 8 lymph nodes + 4 patients without clinical information
+tempusimmune <- as.data.frame(read.csv(file="~/Research-Local/Tempus-Local/Input/Immune_data_v1-05132019.csv", header=TRUE, sep=",")) #74 patients with immune profiles calculated 
 tempusmutation <- tempusmutation %>% group_by(StudyID, AccessionNo) %>% mutate(genecount = n_distinct(Gene))
 tempusmutation <- tempusmutation %>% group_by(StudyID, AccessionNo, Gene) %>%mutate(variantcount = seq_along(Gene))
 tempusmutationtemp <- tempusmutation # saving the original mutation data and using a copy table to make modifications
@@ -44,6 +45,13 @@ tempusmutationtemp$X=NULL
 tempusmutationtemp <- tempusmutationtemp %>% group_by(StudyID, AccessionNo, PanelName, Normalspecimen, Normalcollecteddate, Normalreceiveddate, Tumorspecimen, Tumorcollecteddate, Tumorreceiveddate, TumorPercentage, TumorMutationalBurden, PercentileTumorMutationalBurd, MicrosatelliteInstabilityStatu, DateSigned, genecount, maxvariantcount) %>% summarise_all(funs(toString(na.omit(.), sep='\t'))) #This flattens all of the rows -> RIGHT NOW each patient is on one line and multiple mutations for the same gene are in one entry as are their variant information for ease of merge
 
 tempusmerge <- merge (tempusclinical, tempusmutationtemp, by="StudyID", all.x=TRUE, all.y=FALSE, sort=FALSE) #Merging the clinical and mutational data into one database, reports are excluded if they do not have clinical information
+
+tempusimmune$StudyID <- tempusimmune$study_id
+tempusimmunetemp <- dplyr::select(tempusimmune, -c(order_id, TMB, msi_status, study_id)) #drops excess columns for merge purposes
+tempusimmunetemp <- filter (tempusimmunetemp, !(is.na(b))) #Removes rows with no data (as some of these are duplicates and confuse the merge process)
+tempusimmunetemp <- filter (tempusimmunetemp, (StudyID != "PN0198" & StudyID != "PN0206")) #Removes 2 duplicated rows in which the reason for duplication is not completely clear; this will need to be clarified later.
+
+tempusmerge <- merge (tempusmerge, tempusimmunetemp, by="StudyID", all.x=TRUE) #Merging the immune information if available with the existing dataset. Data was excluded if clinical and mutational information were not also available. 
 ```
 
 #Data cleaning/new variable generation
@@ -59,8 +67,17 @@ tempusmerge$subtype <- ifelse (tempusmerge$HER2.x=="Neg" & tempusmerge$HRstatus=
 
 tempusmerge$bw <- ifelse (tempusmerge$race=="Black", "Black", NA) #Characterizing black/white alone
 tempusmerge$bw <- ifelse (tempusmerge$race=="White", "White", tempusmerge$bw) 
+tempusmerge$bw <- ifelse (tempusmerge$hispanic=="Yes", NA, tempusmerge$bw) 
 
 tempusmerge$vitalstatus <- ifelse (tempusmerge$vitalstatus=="0 Dead", "0", "1") #Factorizing vital status
+
+tempusmerge$vitalstatussurv <- tempusmerge$vitalstatus 
+
+tempusmerge$vitalstatussurv <- ifelse (tempusmerge$vitalstatussurv=="1", 2, tempusmerge$vitalstatussurv)
+
+tempusmerge$vitalstatussurv <- ifelse (tempusmerge$vitalstatussurv=="0", 1, tempusmerge$vitalstatussurv)
+
+tempusmerge$vitalstatussurv <- ifelse (tempusmerge$vitalstatussurv=="2", 0, tempusmerge$vitalstatussurv) #switching 0 and 1 so they accurately reflect survival failure
 
 tempusmerge$stage14 <- ifelse (tempusmerge$Stage %in% "1A",1,NA)
 tempusmerge$stage14 <- ifelse (tempusmerge$Stage %in% "1B",1, tempusmerge$stage14)
@@ -86,7 +103,7 @@ tempusmerge$TMB <- as.numeric(tempusmerge$TMB) #Numeric interpretation of mutati
 
 tempusmerge$timefu <- ifelse (tempusmerge$neoadj==1, ((as.Date(as.character(tempusmerge$date_FU), format="%m/%d/%Y"))-(as.Date(as.character(tempusmerge$date_cx1), format="%m/%d/%Y")))/360, ((as.Date(as.character(tempusmerge$date_FU), format="%m/%d/%Y"))-(as.Date(as.character(tempusmerge$date_surg1), format="%m/%d/%Y")))/360)
 tempusmerge$timefu <- ifelse(is.na(tempusmerge$timefu), ((as.Date(as.character(tempusmerge$date_FU), format="%m/%d/%Y")-as.Date(as.character(tempusmerge$date_surg1), format="%m/%d/%Y")))/360, tempusmerge$timefu)
-tempusmerge$timefu <- ifelse(tempusmerge$timefu<0, NA, tempusmerge$timefu) #duration of follow up for survival curves
+tempusmerge$timefu <- ifelse(tempusmerge$timefu<0, NA, tempusmerge$timefu) #duration of follow up for survival curves in years
 
 tempusmergedupclean <- tempusmerge
 tempusmergedupclean <- tempusmergedupclean[with(tempusmergedupclean, ave(TumorPercentage, StudyID, FUN=max)==TumorPercentage),] #keep duplicates by higher %
@@ -94,7 +111,7 @@ tempusmergedupclean <- tempusmergedupclean[with(tempusmergedupclean, ave(TMB, St
 ```
 
 #Data summary
-We have clinical information for `r length(unique(tempusclinical$StudyID))` patients and mutation information for `r length(unique(tempusreports$StudyID))` patients.
+We have clinical information for `r length(unique(tempusclinical$StudyID))` patients and mutation information for `r length(unique(tempusreports$StudyID))` patients. We have immune information for `r length(unique(tempusimmunetemp$StudyID))` patients.
 
 We are missing clinical information for the following 4 patients. These are not included in the merged data set. 
 ```{r Clinical missing, echo=FALSE}
@@ -105,7 +122,9 @@ setdiff(tempusreports$StudyID, tempusclinical$StudyID)
 duplicates <- tempusreports %>% filter(duplicated(StudyID) | duplicated(StudyID, fromLast = TRUE)) %>% select(StudyID, AccessionNo, Tumorspecimen, TumorPercentage)
 duplicates
 ```
-`r length(unique(duplicates$StudyID))` patients have duplicate reports (most often primary tumor and lymph node) submitted with the above characteristics. These patients are included in the merged data set but in these cases, for any analysis, we counted each patient individually/once using the specimen that offered the best tumor percentage as relevant.
+`r length(unique(duplicates$StudyID))` patients have duplicate reports (most often primary tumor and lymph node) submitted with the above characteristics. These patients are included in the merged data set but in these cases, for any analysis, we counted each patient individually/once using the specimen that offered the best tumor percentage as relevant. 
+
+Of note, among the immune reports, IDs PN0198 (likely due to breast and lymph node samples) and PN0206 (unclear reasons) had 2 separate reports with differing values. As such, these immune reports were excluded from the analysis.  
 
 ```{r Lymph nodes only present}
 lymphnodes <- tempusreports %>% filter((Tumorspecimen=="Lymph node") & !(duplicated(StudyID) | duplicated(StudyID, fromLast = TRUE))) %>% select(StudyID, AccessionNo, Tumorspecimen, TumorPercentage)
@@ -116,7 +135,7 @@ lymphnodes
 #Clinical summary
 Low-yield variables: Date and age of enrollment (38 patients), Sex (1 male patient), Insurance (1 patient with unknown insurance, 126 patients insured), Alcohol history (90 patients not reported), gravidity/parity (26 patients reported), menopause (26 patients reported), distant metastatic sites (only 2 sites reported), histology (14 patients with at least partial lobular disease), surgical margin (4 patients with ? residual disease), 2nd primary (only one patient reported), ki67: not known in 116/127 patients
 
-Variables not incorporated for this analysis: Marital status at diagnosis, breast primary site, laterality, TNM edition and clinical staging, tumorsize, lymphovascularinvasion (64 patients only reported), radiation variables
+Variables not incorporated for this analysis: Marital status at diagnosis, breast primary site, laterality, TNM edition and clinical staging (Rather than pathologic staging), lymphovascularinvasion (64 patients only reported), radiation variables
 
 ```{r Clinical summary, echo=FALSE}
 hist(tempusclinical$age_at_diagnosis)
@@ -132,7 +151,7 @@ kable(table(tempusmergedupclean$recurrenceposneg), caption = "Patients who exper
 kable(table(tempusmergedupclean$nodeposneg), caption = "Fraction of patients with at least one node positive on study", col.names=c("1+ positive nodes", "Freq"))
 kable(table(tempusclinical$grade), caption = "Grade information (known for 125/127 pts)", col.names=c("Grade", "Freq"))
 kable(table(tempusclinical$Stage), caption = "Distribution of analytical stage based on a synthesis of clinical stage and pathological stage information", col.names=c("Compiled stage", "Freq"))
-kable(table(tempusmergedupclean$HRstatus, tempusmergedupclean$HER2.x), caption="Hormone receptor status vs HER2 status", col.names=c("Unk", "HER-neg", "HER2-pos"))
+kable(table(tempusmergedupclean$HRstatus, tempusmergedupclean$HER2.x), caption="Hormone receptor status vs HER2 status. 0 = negative and 1=positive", col.names=c("Unk", "HER-neg", "HER2-pos"), row.names=TRUE)
 kable(table(tempusmergedupclean$subtype), caption="Overall subtype distribution", col.names=c("Subtype", "Freq"))
 kable(table(tempusclinical$chemotherapy), caption="Recieved any type of chemotherapy", col.names=c("Chemotherapy", "Freq"))
 kable(table(tempusmergedupclean$neoadj), caption="Patients with neoadjuvant therapy", col.names=c("Neoadjuvant therapy", "Freq"))
@@ -142,47 +161,88 @@ kable(table(tempusclinical$hormonetherapy), caption="Recieved any type of hormon
 ```
 Of note, with mutation testing prior to sequencing, we had 1 patient each report a BRCA 1 and BRCA 2 mutation. 
 
-#Mutations summary
+#Mutation summary
 Variables not incorporated for this analysis: Percentile mutational burden (incomplete)
 
 We have representation of `r length(unique(tempusmutation$Gene))` genes with mutations in this data set (including both primary tumors and lymph nodes). The most common mutations (incorporating BOTH pathogenic + VUS) were as follows: 
 ```{r Mutation summary and tumor purity, echo=FALSE}
+
 numGenes <- colSums(!((tempusmergedupclean[,105:663])==""))
 numGenes["ERBB2/HER2"] <- sum(numGenes["ERBB2"], numGenes["ERBB2 (HER2)"], numGenes["ERBB2(HER2)"], numGenes["ERBB2HER2)"])
 
-head(sort(numGenes,decreasing=TRUE), 10)
+head(sort(numGenes,decreasing=TRUE), 10) #Frequency of gene mutations per unique patients 
 
 hist(tempusmergedupclean$TumorPercentage, main="Distribution of purity of tumor samples")
 ```
 This is the tumor purity distribution of patients at time of diagnosis. 30% purity is conisdered sufficient to perform MSI testing, for example. 104 of our 127 samples met this criteria. 
 
+```{r Oncoprint}
+tempusoncoprint <- tempusmutation %>% filter(AccessionNo %in% tempusmergedupclean$AccessionNo) %>% select(StudyID, AccessionNo, Gene, variant_name_P, typeofvariant)
+
+tempusoncoprint$alteration <- NA
+tempusoncoprint$variant <- NA
+
+tempusoncoprint$variant <- ifelse(tempusoncoprint$typeofvariant=="copy number gain" | tempusoncoprint$typeofvariant=="Copy number gain" | tempusoncoprint$typeofvariant=="Copy Number gain" | tempusoncoprint$typeofvariant=="copy numbre gain" | tempusoncoprint$typeofvariant=="copy number loss" | tempusoncoprint$typeofvariant=="Copy number loss" | tempusoncoprint$typeofvariant=="Copy numberloss" | tempusoncoprint$typeofvariant=="Copy Number Loss", "CNA", tempusoncoprint$variant)
+
+tempusoncoprint$alteration <- ifelse(tempusoncoprint$typeofvariant=="copy number gain" | tempusoncoprint$typeofvariant=="Copy number gain" | tempusoncoprint$typeofvariant=="Copy Number gain" | tempusoncoprint$typeofvariant=="copy numbre gain", "GAIN", tempusoncoprint$alteration)
+
+tempusoncoprint$alteration <- ifelse (tempusoncoprint$typeofvariant=="copy number loss" | tempusoncoprint$typeofvariant=="Copy number loss" | tempusoncoprint$typeofvariant=="Copy numberloss" | tempusoncoprint$typeofvariant=="Copy Number Loss", "HETLOSS", tempusoncoprint$alteration)
+
+tempusoncoprint$variant <- ifelse(tempusoncoprint$typeofvariant=="frameshift" | tempusoncoprint$typeofvariant=="Frameshift" | tempusoncoprint$typeofvariant=="Frameshift - LOF" | tempusoncoprint$typeofvariant=="Frameshift VAF:" | tempusoncoprint$typeofvariant=="Frameshift- LOF" | tempusoncoprint$typeofvariant=="Frameshift- LOF VAF" | tempusoncoprint$typeofvariant=="frameshift-LOF" | tempusoncoprint$typeofvariant=="FrameshiftVAF:" | tempusoncoprint$typeofvariant=="Inframe deletion" | tempusoncoprint$typeofvariant=="Inframe deletion - GOF" | tempusoncoprint$typeofvariant=="inframe insertion" | tempusoncoprint$typeofvariant=="Inframe insertion" | tempusoncoprint$typeofvariant=="Inframe insertion - GOF" | tempusoncoprint$typeofvariant=="rameshift" | tempusoncoprint$typeofvariant=="Frameshift LOF", "INFRAME", tempusoncoprint$variant)
+
+tempusoncoprint$variant <- ifelse(tempusoncoprint$typeofvariant=="Missense  variant" | tempusoncoprint$typeofvariant=="Missense varian(exon 10) - GOF" | tempusoncoprint$typeofvariant=="missense variant" | tempusoncoprint$typeofvariant=="Missense variant" | tempusoncoprint$typeofvariant=="Missense Variant" | tempusoncoprint$typeofvariant=="Missense variant -" | tempusoncoprint$typeofvariant=="Missense variant - GOF" | tempusoncoprint$typeofvariant=="Missense variant - LOF:" | tempusoncoprint$typeofvariant=="Missense variant (exon 10) - GOF" | tempusoncoprint$typeofvariant=="Missense variant (exon 10)- GOF" | tempusoncoprint$typeofvariant=="Missense variant (exon 14) - GOF" | tempusoncoprint$typeofvariant=="Missense variant (exon 21) - GOF" | tempusoncoprint$typeofvariant=="Missense variant (exon 21) - GOF VAF" | tempusoncoprint$typeofvariant=="Missense variant (exon 5) - GOF" | tempusoncoprint$typeofvariant=="Missense Variant (exon 8)- GOF" | tempusoncoprint$typeofvariant=="Missense Variant (exon 8)- GOF" | tempusoncoprint$typeofvariant=="Missense variant â\u0080\u0093 LOF" | tempusoncoprint$typeofvariant=="Missense variant GOF" | tempusoncoprint$typeofvariant=="Missense variant LOF" | tempusoncoprint$typeofvariant=="Missense variant -" | tempusoncoprint$typeofvariant=="Missense variant - GOF" | tempusoncoprint$typeofvariant=="Missense variant - LOF:" | tempusoncoprint$typeofvariant=="Missense variant- GOF" | tempusoncoprint$typeofvariant=="Missense variant LOF" | tempusoncoprint$typeofvariant=="Missense variant- LOF" | tempusoncoprint$typeofvariant=="Missense variant-LOF" | tempusoncoprint$typeofvariant=="Missense variant(exon 10) - GOF" | tempusoncoprint$typeofvariant=="Missense variant(exon 2) - GOF" | tempusoncoprint$typeofvariant=="Missense variant(exon 4) - GOF" | tempusoncoprint$typeofvariant=="Missense varian(exon 10) - GOF" | tempusoncoprint$typeofvariant=="Missense variant - LOF" | tempusoncoprint$typeofvariant=="Missesne variant" | tempusoncoprint$typeofvariant=="Missense variant -LOF", "MISSENSE", tempusoncoprint$variant)
+
+tempusoncoprint$variant <- ifelse(tempusoncoprint$typeofvariant=="region variant" | tempusoncoprint$typeofvariant=="region variant- LOF" | tempusoncoprint$typeofvariant=="Splice" | tempusoncoprint$typeofvariant=="Splice region" | tempusoncoprint$typeofvariant=="Splice region vairant" | tempusoncoprint$typeofvariant=="Splice region vairant - LOF" | tempusoncoprint$typeofvariant=="splice region variant" | tempusoncoprint$typeofvariant=="Splice region variant" | tempusoncoprint$typeofvariant=="Splice region variant - LOF" | tempusoncoprint$typeofvariant=="Splice region variant -LOF" | tempusoncoprint$typeofvariant=="Splice region variant â\u0080\u0093 GOF" | tempusoncoprint$typeofvariant=="Splice region variant â\u0080\u0093 LOF" | tempusoncoprint$typeofvariant=="Splice region variant VAF" | tempusoncoprint$typeofvariant=="Splice region variant- GOF" | tempusoncoprint$typeofvariant=="Splice region variant- LOF" | tempusoncoprint$typeofvariant=="Splice region variant-(exon 3) â\u0080\u0093 GOF", "PROMOTER", tempusoncoprint$variant)
+
+tempusoncoprint$variant <- ifelse(tempusoncoprint$typeofvariant=="Start loss" | tempusoncoprint$typeofvariant=="Start Loss" | tempusoncoprint$typeofvariant=="StartStop gain loss- LOF" | tempusoncoprint$typeofvariant=="stop gain" | tempusoncoprint$typeofvariant=="Stop gain" | tempusoncoprint$typeofvariant=="Stop Gain" | tempusoncoprint$typeofvariant=="Stop gain - LOF" | tempusoncoprint$typeofvariant=="Stop gain LOF" | tempusoncoprint$typeofvariant=="Stop gain VAF" | tempusoncoprint$typeofvariant=="Stop gain-" | tempusoncoprint$typeofvariant=="Stop gain- GOF" | tempusoncoprint$typeofvariant=="Stop gain-LOF" | tempusoncoprint$typeofvariant=="Stop loss" | tempusoncoprint$typeofvariant=="Stop gain(exon 4) - LOF" | tempusoncoprint$typeofvariant=="Stopgain" | tempusoncoprint$typeofvariant=="Stop gain- LOF", "TRUNC", tempusoncoprint$variant)
+
+tempusoncoprint$variant <- ifelse(is.na(tempusoncoprint$variant), "OTHER", tempusoncoprint$variant)
+
+tempusoncoprint$alteration <- ifelse (is.na(tempusoncoprint$alteration), as.character(tempusoncoprint$variant_name_P), tempusoncoprint$alteration)
+
+tempusoncoprint$alteration <- ifelse (tempusoncoprint$alteration=="", "MUT", tempusoncoprint$alteration)
+
+tempusoncoprint <- within(tempusoncoprint, rm(StudyID, variant_name_P, typeofvariant)) #Removing alteration if not using CBioportal for Oncoprinter
+
+write.table (tempusoncoprint, file="oncoprint.tsv", sep="\t", col.names=FALSE, row.names=FALSE)
+```
+
 ```{r Ongoing mutational summary, echo=FALSE}
 summary(tempusmergedupclean$TMB)
 hist(tempusmergedupclean$TMB, main="Distribution of tumor mutational burden")
 ```
-Only 88 of 139 reports contained percentile information. 
+Only 88 of 139 reports contained percentile information; this was not included for analysis. Tumor mutational burden was measured in m/MB.
 
 ```{r Ongoing mutational summary-2, echo=FALSE}
 kable(table(tempusmergedupclean$MicrosatelliteInstabilityStatu), caption="Distribution of MSI status", col.names=c("MSI status", "Freq"))
-kable(sort(table(tempusmutation$typeofvariant), decreasing=TRUE), caption="Distribution of variant types across all mutations", col.names=c("Variant type", "Freq"))
 ```
-Missense variants, splice region variants, stop gains and copy number gains/losses were the best represented in our cohort. 
+The majority of patients had stable MSI status in their tumors; only 1.5% showed MSI unstable disease. 
 
-#Recurrence and survival among different clinical subgroups
-```{r}
-surv_object <- Surv(time = tempusmergedupclean$timefu, event = tempusmergedupclean$recurrenceposneg)
+```{r Immune summary, echo=FALSE}
+summary(tempusmergedupclean$b)
+hist(tempusmergedupclean$TMB, main="Distribution of B cells in the tumor immune infiltrate")
+summary(tempusmergedupclean$cd4)
+hist(tempusmergedupclean$cd4, main="Distribution of CD4 cells in the tumor immune infiltrate")
+summary(tempusmergedupclean$cd8)
+hist(tempusmergedupclean$cd8, main="Distribution of CD8 cells in the tumor immune infiltrate")
+summary(tempusmergedupclean$mac)
+hist(tempusmergedupclean$mac, main="Distribution of macrophages in the tumor immune infiltrate")
+summary(tempusmergedupclean$nk)
+hist(tempusmergedupclean$nk, main="Distribution of NK cells in the tumor immune infiltrate")
+summary(tempusmergedupclean$immune)
+hist(tempusmergedupclean$immune, main="Immune scores as calculated by Tempus")
+```
+74 patients had "immune profile" data as calculated by Tempus. This represents a derivation from the RNA-seq data that was developed from a machine learning algorithm, NOT a pathology-based assessment. The immune score is a "support vector regression model for the immune cell estimates and formal thresholds for high or low are not in place as of yet."
 
-fit.coxph <- coxph(surv_object ~ tempusmergedupclean$age50 + tempusmergedupclean$neoadj + tempusmergedupclean$subtype + tempusmergedupclean$bw + tempusmergedupclean$stage14,
-                   data = tempusmergedupclean)
-                   
-ggforest(fit.coxph, data = tempusmergedupclean, main="Hazard ratios of clinical variables prior to assessing mutational variables - Recurrence ")
+#Recurrence and survival by ethnicity in our cohort
+```{r Ethnicity recurrence and survival}
+fitsurvival <- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$bw, 
+               data=tempusmergedupclean)
+ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, title="Survival of patients by ethnicity")
 
-surv_object <- Surv(time = tempusmergedupclean$timefu, event = as.numeric(tempusmergedupclean$vitalstatus))
-
-fit.coxph <- coxph(surv_object ~ tempusmergedupclean$age50 + tempusmergedupclean$neoadj + tempusmergedupclean$subtype + tempusmergedupclean$bw + tempusmergedupclean$stage14,
-                   data = tempusmergedupclean)
-                   
-ggforest(fit.coxph, data = tempusmergedupclean, main="Hazard ratios of clinical variables prior to assessing mutational variables - Survival")
+fitrecurrence <- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$recurrenceposneg)) ~tempusmergedupclean$bw, 
+               data=tempusmergedupclean)
+ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table="percentage", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, ylab="Recurrence", title="Likelihood of recurrence in patients by ethnicity")
 ```
 
 #Mutations among different subgroups - Subtype and race (Not significant)
@@ -210,6 +270,7 @@ allgenesHERposHRpos <- colSums(!((subtypeHERposHRpos[,105:663])==""))
 allgenesHERposHRpos["ERBB2/HER2"] <- sum(allgenesHERposHRpos["ERBB2"], allgenesHERposHRpos["ERBB2 (HER2)"], allgenesHERposHRpos["ERBB2(HER2)"], allgenesHERposHRpos["ERBB2HER2)"])
 headHERposHRpos <- head(sort(allgenesHERposHRpos, decreasing=TRUE), 10)
 headHERposHRpos
+
 chisq.test(headHERnegHRpos, headHERposHRneg, headTNBC, headHERposHRpos)
 
 subtypewhite <- tempusmergedupclean %>% filter(race=="White")
@@ -226,54 +287,97 @@ headblack
 
 chisq.test(headwhite, headblack)
 ```
-We did not see a significant difference in our cohort between breast cancer subtype or race between the top 5 most mutated genes.
+We did not see a significant difference in our cohort between breast cancer subtype or race and the most commonly mutated genes (outside of overrepresentation of ERBB2/HER2 in the HER2+ subtype).
 
-#Mutations among different subgroups - Patients younger than 50
-```{r Mutation distribution in patients < 50, warning=FALSE}
-subtypeyoung <- tempusmergedupclean %>% filter(age50==1)
-allgenesyoung<- colSums(!((subtypeyoung[,105:663])==""))
-allgenesyoung["ERBB2/HER2"] <- sum(allgenesyoung["ERBB2"], allgenesyoung["ERBB2 (HER2)"], allgenesyoung["ERBB2(HER2)"], allgenesyoung["ERBB2HER2)"])
-headyoung <- head(sort(allgenesyoung, decreasing=TRUE), 5)
-headyoung
+```{r Outcomes by mutation status}
+tempusmergedupclean$TP53YN <- ifelse (tempusmergedupclean$TP53=="", 0, 1)
 
-subtypeold <- tempusmergedupclean %>% filter(age50==0)
-allgenesold<- colSums(!((subtypeold[,105:663])==""))
-allgenesold["ERBB2/HER2"] <- sum(allgenesold["ERBB2"], allgenesold["ERBB2 (HER2)"], allgenesold["ERBB2(HER2)"], allgenesold["ERBB2HER2)"])
-headold <- head(sort(allgenesold, decreasing=TRUE), 5)
-headold
+fitsurvival <- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$TP53YN, 
+               data=tempusmergedupclean)
+ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, title="Survival of patients by TP53 mutation status")
 
-chisq.test(headold, headyoung)
+fitrecurrence <- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$recurrenceposneg)) ~tempusmergedupclean$TP53YN, 
+               data=tempusmergedupclean)
+ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, ylab="Recurrence", title="Likelihood of recurrence in patients by TP53 mutation status")
+
+tempusmergedupclean$BRCAYN <- ifelse (tempusmergedupclean$BRCA1=="" & tempusmergedupclean$BRCA2=="", 0, 1)
+
+fitsurvival <- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$BRCAYN, 
+               data=tempusmergedupclean)
+ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, title="Survival of patients by BRCA mutation status")
+
+fitrecurrence <- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$recurrenceposneg)) ~tempusmergedupclean$BRCAYN, 
+               data=tempusmergedupclean)
+ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, ylab="Recurrence", title="Likelihood of recurrence in patients by BRCA mutation status")
+
+tempusmergedupclean$ARYN <- ifelse (tempusmergedupclean$AR=="", 0, 1)
+
+fitsurvival <- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$ARYN, 
+               data=tempusmergedupclean)
+ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, title="Survival of patients by AR mutation status")
+
+fitrecurrence <- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$recurrenceposneg)) ~tempusmergedupclean$ARYN, 
+               data=tempusmergedupclean)
+ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, ylab="Recurrence", title="Likelihood of recurrence in patients by AR mutation status")
+
+tempusmergedupclean$PIK3CAYN <- ifelse (tempusmergedupclean$PIK3CA=="", 0, 1)
+
+fitsurvival <- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$PIK3CAYN, 
+               data=tempusmergedupclean)
+ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, title="Survival of patients by PIK3CA mutation status")
+
+fitrecurrence <- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$recurrenceposneg)) ~tempusmergedupclean$PIK3CAYN, 
+               data=tempusmergedupclean)
+ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, ylab="Recurrence", title="Likelihood of recurrence in patients by PIK3CA mutation status")
 ```
-We did not see a a statistically significant difference in the distribution of genes in the younger patients relative to the older patients (for the top 5 genes).
+
+#Immune profile data and association with survival and recurrence
+```{r Immune profile recurrence and survival}
+tempusmergedupclean$TMBhighlow <- ifelse(tempusmergedupclean$TMB>20, 1, 0)
+  
+fitsurvival <- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$TMBhighlow, 
+               data=tempusmergedupclean)
+ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, title="Survival of patients by TMB mutation status (high>20 m/MB)")
+
+fitrecurrence <- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$recurrenceposneg)) ~tempusmergedupclean$TMBhighlow, 
+               data=tempusmergedupclean)
+ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, ylab="Recurrence", title="Likelihood of recurrence in patients by TMB (high>20 m/mB")
+
+tempusmergedupclean$immunemedian <- ifelse(tempusmergedupclean$immune>0.12, 1, 0)
+
+fitsurvival <- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$immunemedian, 
+               data=tempusmergedupclean)
+ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, title="Survival of patients by immune score greater or less than the median")
+
+fitrecurrence <- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$recurrenceposneg)) ~tempusmergedupclean$immunemedian, 
+               data=tempusmergedupclean)
+ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, ylab="Recurrence", title="Likelihood of recurrence in patients by immune score greater or less than the median")
+
+surv_object <- Surv(time=tempusmergedupclean$timefu, event=as.numeric(tempusmergedupclean$vitalstatussurv))
+     
+fit.coxph <- coxph(surv_object ~ tempusmergedupclean$TMBhighlow + tempusmergedupclean$immunemedian,
+                   data = tempusmergedupclean)
+                   
+ggforest(fit.coxph, data = tempusmergedupclean, main="Comparative hazard ratios of immune measurements in patient tumors")
+
+```
+
+Based on Chalmers et al (https://genomemedicine.biomedcentral.com/track/pdf/10.1186/s13073-017-0424-2?site=genomemedicine.biomedcentral.com), we defined a high TMB as >20. We saw a nonsignificant trend towards increased mutational burden and immune infiltrate being associated with worse survival in these patients. 
 
 ```{r Neoadjuvant patients}
 tempusneo <- tempusmergedupclean %>% filter(tempusmergedupclean$neoadj==1 & !(StudyID=="MB-0138") & !(StudyID=="MB-1020") & !(StudyID=="MB-1049"))
 
 kable(table(tempusneo$recurrenceposneg), caption = "Neoadjuvant patients who experienced recurrence", col.names=c("Recurrence", "Freq"))
-kable(table(tempusneo$vitalstatus), caption = "Neoadjuvant patients who experienced recurrence", col.names=c("Recurrence", "Freq"))
+kable(table(tempusneo$vitalstatus), caption = "Neoadjuvant patients who did not survive (0=died)", col.names=c("Vital status", "Freq"))
 
-neoadjTP53<- tempusneo[,"TP53"]
-neoadjTP53 <- ifelse (!(neoadjTP53==""), 1, 0)
+fitsurvival <- survfit(Surv(time=tempusneo$timefu, as.numeric(tempusneo$vitalstatussurv)) ~tempusneo$TP53YN, 
+               data=tempusneo)
+ggsurvplot(fitsurvival, data=tempusneo, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, title="Survival of neoadjuvant patients by TP53 status")
 
-surv_object <- Surv(time = tempusneo$timefu, event = tempusneo$recurrenceposneg)
-fit2<- survfit(Surv(tempusneo$TMB) ~ recurrenceposneg, data = tempusneo)
-ggsurvplot(fit2, pval=TRUE)
-
-fit.coxph <- coxph(surv_object ~ tempusneo$TMB,
-                   data = tempusneo)
-                   
-ggforest(fit.coxph, data = tempusneo, main="Hazard ratios of TMB in neoadjuvant patients - Recurrence")
-
-surv_object <- Surv(time = tempusneo$timefu, event = as.numeric(tempusneo$vitalstatus))
-fit2<- survfit(Surv(tempusneo$TMB) ~ vitalstatus, data = tempusneo)
-ggsurvplot(fit2, pval=TRUE)
-
-fit.coxph <- coxph(surv_object ~ tempusneo$TMB,
-                   data = tempusneo)
-                   
-ggforest(fit.coxph, data = tempusneo, main="Hazard ratios of TMB in neoadjuvant patients - Recurrence")
+fitrecurrence <- survfit(Surv(time=tempusneo$timefu, as.numeric(tempusneo$recurrenceposneg)) ~tempusneo$TP53YN, 
+               data=tempusneo)
+ggsurvplot(fitrecurrence, data=tempusneo, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, ylab="Recurrence", title="Likelihood of recurrence in neoadjuvant patients by TP53 mutation status")
 ```
-TMB was nonsignifiantly associated with recurrence when increased in neoadjuvant patients, but our sample size was very small. This relationship was inverted but also nonsignificant for survival. 
 
 #Heterogeneity between sentinel lymph nodes and primary tumors
 ```{r Lymph node differences relative to primary tumor}
@@ -291,83 +395,6 @@ tempusbreastlymph <- tempusmerge %>% filter((StudyID %in% duplicates$StudyID) & 
   
 ```
 We did see heterogeneity between the mutations represented in the lymph nodes and the mutations represented in the primary breast tumors for those samples. Two of the lymph nodes had 20% purity, 2 had 40% purity and 2 had 50% purity. 
-
-#Exploring what mutation distribution means from a clinical standpoint
-We have the variables of 
-*genecount (number of uniquely mutated genes for an individual patient)
-*maxvariantcount (maximum frequency of variants for an individual gene for an individual patient)
-*TMB (Overall tumor mutational burden as measured by Tempus)
-
-```{r Mutation distribution per patient-1}
-summary(tempusmergedupclean$genecount)
-table(tempusmergedupclean$genecount)
-hist(tempusmergedupclean$genecount, main="Distribution of uniquely mutated genes per patient sample")
-
-summary(tempusmergedupclean$maxvariantcount)
-table(tempusmergedupclean$maxvariantcount)
-hist(tempusmergedupclean$maxvariantcount, main="Distribution of highest number of variants\n for a single gene per patient sample")
-
-summary(tempusmergedupclean$TMB)
-table(tempusmergedupclean$TMB)
-hist(tempusmergedupclean$TMB, main="Distribution of tumor mutational burden (as measured by Tempus)")
-
-cor(tempusmergedupclean$genecount, tempusmergedupclean$maxvariantcount)
-cor(tempusmergedupclean$genecount, tempusmergedupclean$TMB)
-cor(tempusmergedupclean$maxvariantcount, tempusmergedupclean$TMB)
-```
-We see a long tail towards the right in terms of frequency of uniquely mutated genes, number of variants for a single gene and TMB, suggesting (as could be expected), that there are a few samples that have a significant burden of mutations in some form. There is good correlaton between gene count, max variant count and TMB. 
-
-```{r Mutation distribution per patient-2}
-ggplot()+
-  geom_line(data=tempusmergedupclean, aes(x=tempusmergedupclean$TMB, y=tempusmergedupclean$maxvariantcount), size=1, color="red")+
-  geom_line(data=tempusmergedupclean, aes(x=tempusmergedupclean$TMB, y=tempusmergedupclean$genecount), size=1, color="blue")
-```
-Blue relfects gene count, red reflects max variant count. These track in a relatively linear fashion with TMB. 
-
-```{r Mutation distribution per patient-3}
-surv_object <- Surv(time = tempusmergedupclean$timefu, event = tempusmergedupclean$recurrenceposneg)
-
-fit.coxph <- coxph(surv_object ~ tempusmergedupclean$genecount + tempusmergedupclean$TMB + tempusmergedupclean$maxvariantcount, 
-                   data = tempusmergedupclean)
-                   
-ggforest(fit.coxph, data = tempusmergedupclean, main="Comparative hazard ratios of recurrence associated \n with markers of mutational heterogeneity")
-
-fit1<- survfit(Surv(tempusmergedupclean$genecount) ~ recurrenceposneg, data = tempusmergedupclean)
-ggsurvplot(fit1, pval=TRUE)
-
-fit2<- survfit(Surv(log(tempusmergedupclean$maxvariantcount)) ~ recurrenceposneg, data = tempusmergedupclean)
-ggsurvplot(fit2, pval=TRUE)
-
-fit3<- survfit(Surv(tempusmergedupclean$TMB) ~ recurrenceposneg, data = tempusmergedupclean)
-ggsurvplot(fit3, pval=TRUE)
-
-
-surv_object <- Surv(time = tempusmergedupclean$timefu, event = as.numeric(tempusmergedupclean$vitalstatus))
-
-fit.coxph <- coxph(surv_object ~ tempusmergedupclean$genecount + tempusmergedupclean$TMB + tempusmergedupclean$maxvariantcount, 
-                   data = tempusmergedupclean)
-                   
-ggforest(fit.coxph, data = tempusmergedupclean, main="Comparative hazard ratios of recurrence associated \n with markers of mutational heterogeneity")
-
-fit1<- survfit(Surv(tempusmergedupclean$genecount) ~ vitalstatus, data = tempusmergedupclean)
-ggsurvplot(fit1, pval=TRUE)
-
-fit2<- survfit(Surv(log(tempusmergedupclean$maxvariantcount)) ~ vitalstatus, data = tempusmergedupclean)
-ggsurvplot(fit2, pval=TRUE)
-
-fit3<- survfit(Surv(tempusmergedupclean$TMB) ~ vitalstatus, data = tempusmergedupclean)
-ggsurvplot(fit3, pval=TRUE)
-
-mylogit <- glm(tempusmergedupclean$recurrenceposneg ~ tempusmergedupclean$genecount + +tempusmergedupclean$subtype + tempusmergedupclean$age50 + tempusmergedupclean$race +tempusmergedupclean$stage14, data = tempusmergedupclean, family = "binomial")
-summary(mylogit)
-
-mylogit <- glm(tempusmergedupclean$recurrenceposneg ~ tempusmergedupclean$TMB + +tempusmergedupclean$subtype + tempusmergedupclean$age50 + tempusmergedupclean$race +tempusmergedupclean$stage14, data = tempusmergedupclean, family = "binomial")
-summary(mylogit)
-
-mylogit <- glm(tempusmergedupclean$recurrenceposneg ~ tempusmergedupclean$maxvariantcount + +tempusmergedupclean$subtype + tempusmergedupclean$age50 + tempusmergedupclean$race +tempusmergedupclean$stage14, data = tempusmergedupclean, family = "binomial")
-summary(mylogit)
-```
-We saw significant associations between recurrence and gene count, variant count and TMB in univariate analyses. With a logistic regression stratifying for age, race, subtype and stage, these did not maintain significance, but this may be due to the smaller sample size as genecount and TMB did not correlate closely with stage and would not expected to be completely substituted for by this variable in this data set. 
 
 #Extremely mutated patients x 2 - case examples
 ```{r Look at characteristics of extreme patients}

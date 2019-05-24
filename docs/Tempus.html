@@ -11,7 +11,7 @@
 
 
 
-<title>Tempus Data Analysis</title>
+<title>Tempus Data Analysis 5/23/2019</title>
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -410,17 +410,16 @@ div.section {
 
 
 
-<h1 class="title toc-ignore">Tempus Data Analysis</h1>
+<h1 class="title toc-ignore">Tempus Data Analysis 5/23/2019</h1>
 
 </div>
 
 
-<p><strong>Last updated:</strong> 2019-02-12</p>
+<p><strong>Last updated:</strong> 2019-05-24</p>
 <strong>workflowr checks:</strong> <small>(Click a bullet for more information)</small>
 <ul>
 <li>
-<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>R Markdown file:</strong> up-to-date </summary></p>
-<p>Great! Since the R Markdown file has been committed to the Git repository, you know the exact version of the code that produced these results.</p>
+<p><details> <summary> <strong style="color:red;">✖</strong> <strong>R Markdown file:</strong> uncommitted changes </summary> The R Markdown file has unstaged changes. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
 </details>
 </li>
 <li>
@@ -439,7 +438,7 @@ div.section {
 </details>
 </li>
 <li>
-<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> fbe8a8e </summary></p>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> 1da7664 </summary></p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
 <pre><code>
 Ignored files:
@@ -452,6 +451,12 @@ Ignored files:
     Ignored:    docs/.DS_Store
     Ignored:    docs/figure/.DS_Store
     Ignored:    output/.DS_Store
+
+Untracked files:
+    Untracked:  oncoprint.tsv
+
+Unstaged changes:
+    Modified:   analysis/Tempus.Rmd
 
 </code></pre>
 Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes. </details>
@@ -480,6 +485,23 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align:left;">
+html
+</td>
+<td style="text-align:left;">
+1da7664
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-02-12
+</td>
+<td style="text-align:left;">
+HTML file only
+</td>
+</tr>
 <tr>
 <td style="text-align:left;">
 html
@@ -755,7 +777,14 @@ tempusmutationtemp$X=NULL
 
 tempusmutationtemp &lt;- tempusmutationtemp %&gt;% group_by(StudyID, AccessionNo, PanelName, Normalspecimen, Normalcollecteddate, Normalreceiveddate, Tumorspecimen, Tumorcollecteddate, Tumorreceiveddate, TumorPercentage, TumorMutationalBurden, PercentileTumorMutationalBurd, MicrosatelliteInstabilityStatu, DateSigned, genecount, maxvariantcount) %&gt;% summarise_all(funs(toString(na.omit(.), sep=&#39;\t&#39;))) #This flattens all of the rows -&gt; RIGHT NOW each patient is on one line and multiple mutations for the same gene are in one entry as are their variant information for ease of merge
 
-tempusmerge &lt;- merge (tempusclinical, tempusmutationtemp, by=&quot;StudyID&quot;, all.x=TRUE, all.y=FALSE, sort=FALSE) #Merging the clinical and mutational data into one database, reports are excluded if they do not have clinical information</code></pre>
+tempusmerge &lt;- merge (tempusclinical, tempusmutationtemp, by=&quot;StudyID&quot;, all.x=TRUE, all.y=FALSE, sort=FALSE) #Merging the clinical and mutational data into one database, reports are excluded if they do not have clinical information
+
+tempusimmune$StudyID &lt;- tempusimmune$study_id
+tempusimmunetemp &lt;- dplyr::select(tempusimmune, -c(order_id, TMB, msi_status, study_id)) #drops excess columns for merge purposes
+tempusimmunetemp &lt;- filter (tempusimmunetemp, !(is.na(b))) #Removes rows with no data (as some of these are duplicates and confuse the merge process)
+tempusimmunetemp &lt;- filter (tempusimmunetemp, (StudyID != &quot;PN0198&quot; &amp; StudyID != &quot;PN0206&quot;)) #Removes 2 duplicated rows in which the reason for duplication is not completely clear; this will need to be clarified later.
+
+tempusmerge &lt;- merge (tempusmerge, tempusimmunetemp, by=&quot;StudyID&quot;, all.x=TRUE) #Merging the immune information if available with the existing dataset. Data was excluded if clinical and mutational information were not also available. </code></pre>
 </div>
 <div id="data-cleaningnew-variable-generation" class="section level1">
 <h1>Data cleaning/new variable generation</h1>
@@ -770,8 +799,17 @@ tempusmerge$subtype &lt;- ifelse (tempusmerge$HER2.x==&quot;Neg&quot; &amp; temp
 
 tempusmerge$bw &lt;- ifelse (tempusmerge$race==&quot;Black&quot;, &quot;Black&quot;, NA) #Characterizing black/white alone
 tempusmerge$bw &lt;- ifelse (tempusmerge$race==&quot;White&quot;, &quot;White&quot;, tempusmerge$bw) 
+tempusmerge$bw &lt;- ifelse (tempusmerge$hispanic==&quot;Yes&quot;, NA, tempusmerge$bw) 
 
 tempusmerge$vitalstatus &lt;- ifelse (tempusmerge$vitalstatus==&quot;0 Dead&quot;, &quot;0&quot;, &quot;1&quot;) #Factorizing vital status
+
+tempusmerge$vitalstatussurv &lt;- tempusmerge$vitalstatus 
+
+tempusmerge$vitalstatussurv &lt;- ifelse (tempusmerge$vitalstatussurv==&quot;1&quot;, 2, tempusmerge$vitalstatussurv)
+
+tempusmerge$vitalstatussurv &lt;- ifelse (tempusmerge$vitalstatussurv==&quot;0&quot;, 1, tempusmerge$vitalstatussurv)
+
+tempusmerge$vitalstatussurv &lt;- ifelse (tempusmerge$vitalstatussurv==&quot;2&quot;, 0, tempusmerge$vitalstatussurv) #switching 0 and 1 so they accurately reflect survival failure
 
 tempusmerge$stage14 &lt;- ifelse (tempusmerge$Stage %in% &quot;1A&quot;,1,NA)
 tempusmerge$stage14 &lt;- ifelse (tempusmerge$Stage %in% &quot;1B&quot;,1, tempusmerge$stage14)
@@ -797,7 +835,7 @@ tempusmerge$TMB &lt;- as.numeric(tempusmerge$TMB) #Numeric interpretation of mut
 
 tempusmerge$timefu &lt;- ifelse (tempusmerge$neoadj==1, ((as.Date(as.character(tempusmerge$date_FU), format=&quot;%m/%d/%Y&quot;))-(as.Date(as.character(tempusmerge$date_cx1), format=&quot;%m/%d/%Y&quot;)))/360, ((as.Date(as.character(tempusmerge$date_FU), format=&quot;%m/%d/%Y&quot;))-(as.Date(as.character(tempusmerge$date_surg1), format=&quot;%m/%d/%Y&quot;)))/360)
 tempusmerge$timefu &lt;- ifelse(is.na(tempusmerge$timefu), ((as.Date(as.character(tempusmerge$date_FU), format=&quot;%m/%d/%Y&quot;)-as.Date(as.character(tempusmerge$date_surg1), format=&quot;%m/%d/%Y&quot;)))/360, tempusmerge$timefu)
-tempusmerge$timefu &lt;- ifelse(tempusmerge$timefu&lt;0, NA, tempusmerge$timefu) #duration of follow up for survival curves
+tempusmerge$timefu &lt;- ifelse(tempusmerge$timefu&lt;0, NA, tempusmerge$timefu) #duration of follow up for survival curves in years
 
 tempusmergedupclean &lt;- tempusmerge
 tempusmergedupclean &lt;- tempusmergedupclean[with(tempusmergedupclean, ave(TumorPercentage, StudyID, FUN=max)==TumorPercentage),] #keep duplicates by higher %
@@ -805,7 +843,7 @@ tempusmergedupclean &lt;- tempusmergedupclean[with(tempusmergedupclean, ave(TMB,
 </div>
 <div id="data-summary" class="section level1">
 <h1>Data summary</h1>
-<p>We have clinical information for 127 patients and mutation information for 131 patients.</p>
+<p>We have clinical information for 127 patients and mutation information for 131 patients. We have immune information for 70 patients.</p>
 <p>We are missing clinical information for the following 4 patients. These are not included in the merged data set.</p>
 <pre><code>[1] &quot;PN0118&quot; &quot;PN0124&quot; &quot;PN0153&quot; &quot;PN0155&quot;</code></pre>
 <pre class="r"><code>duplicates &lt;- tempusreports %&gt;% filter(duplicated(StudyID) | duplicated(StudyID, fromLast = TRUE)) %&gt;% select(StudyID, AccessionNo, Tumorspecimen, TumorPercentage)
@@ -816,6 +854,7 @@ duplicates</code></pre>
   </script>
 </div>
 <p>8 patients have duplicate reports (most often primary tumor and lymph node) submitted with the above characteristics. These patients are included in the merged data set but in these cases, for any analysis, we counted each patient individually/once using the specimen that offered the best tumor percentage as relevant.</p>
+<p>Of note, among the immune reports, IDs PN0198 (likely due to breast and lymph node samples) and PN0206 (unclear reasons) had 2 separate reports with differing values. As such, these immune reports were excluded from the analysis.</p>
 <pre class="r"><code>lymphnodes &lt;- tempusreports %&gt;% filter((Tumorspecimen==&quot;Lymph node&quot;) &amp; !(duplicated(StudyID) | duplicated(StudyID, fromLast = TRUE))) %&gt;% select(StudyID, AccessionNo, Tumorspecimen, TumorPercentage)
 lymphnodes</code></pre>
 <div data-pagedtable="false">
@@ -828,7 +867,7 @@ lymphnodes</code></pre>
 <div id="clinical-summary" class="section level1">
 <h1>Clinical summary</h1>
 <p>Low-yield variables: Date and age of enrollment (38 patients), Sex (1 male patient), Insurance (1 patient with unknown insurance, 126 patients insured), Alcohol history (90 patients not reported), gravidity/parity (26 patients reported), menopause (26 patients reported), distant metastatic sites (only 2 sites reported), histology (14 patients with at least partial lobular disease), surgical margin (4 patients with ? residual disease), 2nd primary (only one patient reported), ki67: not known in 116/127 patients</p>
-<p>Variables not incorporated for this analysis: Marital status at diagnosis, breast primary site, laterality, TNM edition and clinical staging, tumorsize, lymphovascularinvasion (64 patients only reported), radiation variables</p>
+<p>Variables not incorporated for this analysis: Marital status at diagnosis, breast primary site, laterality, TNM edition and clinical staging (Rather than pathologic staging), lymphovascularinvasion (64 patients only reported), radiation variables</p>
 <p><img src="figure/Tempus.Rmd/Clinical%20summary-1.png" width="672" style="display: block; margin: auto;" /></p>
 <details> <summary><em>Expand here to see past versions of Clinical summary-1.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
@@ -1074,7 +1113,7 @@ Sheila Rajagopal
 </tbody>
 </table>
 <table>
-<caption>Hormone receptor status vs HER2 status</caption>
+<caption>Hormone receptor status vs HER2 status. 0 = negative and 1=positive</caption>
 <thead>
 <tr class="header">
 <th></th>
@@ -1237,8 +1276,8 @@ Sheila Rajagopal
 </tbody>
 </table>
 </div>
-<div id="mutations-summary" class="section level1">
-<h1>Mutations summary</h1>
+<div id="mutation-summary" class="section level1">
+<h1>Mutation summary</h1>
 <p>Variables not incorporated for this analysis: Percentile mutational burden (incomplete)</p>
 <p>We have representation of 560 genes with mutations in this data set (including both primary tumors and lymph nodes). The most common mutations (incorporating BOTH pathogenic + VUS) were as follows:</p>
 <pre><code>      TP53       MCL1     PIK3CA ERBB2/HER2      ZFHX3        ATM 
@@ -1277,6 +1316,34 @@ Sheila Rajagopal
 </table>
 <p></details></p>
 <p>This is the tumor purity distribution of patients at time of diagnosis. 30% purity is conisdered sufficient to perform MSI testing, for example. 104 of our 127 samples met this criteria.</p>
+<pre class="r"><code>tempusoncoprint &lt;- tempusmutation %&gt;% filter(AccessionNo %in% tempusmergedupclean$AccessionNo) %&gt;% select(StudyID, AccessionNo, Gene, variant_name_P, typeofvariant)
+
+tempusoncoprint$alteration &lt;- NA
+tempusoncoprint$variant &lt;- NA
+
+tempusoncoprint$variant &lt;- ifelse(tempusoncoprint$typeofvariant==&quot;copy number gain&quot; | tempusoncoprint$typeofvariant==&quot;Copy number gain&quot; | tempusoncoprint$typeofvariant==&quot;Copy Number gain&quot; | tempusoncoprint$typeofvariant==&quot;copy numbre gain&quot; | tempusoncoprint$typeofvariant==&quot;copy number loss&quot; | tempusoncoprint$typeofvariant==&quot;Copy number loss&quot; | tempusoncoprint$typeofvariant==&quot;Copy numberloss&quot; | tempusoncoprint$typeofvariant==&quot;Copy Number Loss&quot;, &quot;CNA&quot;, tempusoncoprint$variant)
+
+tempusoncoprint$alteration &lt;- ifelse(tempusoncoprint$typeofvariant==&quot;copy number gain&quot; | tempusoncoprint$typeofvariant==&quot;Copy number gain&quot; | tempusoncoprint$typeofvariant==&quot;Copy Number gain&quot; | tempusoncoprint$typeofvariant==&quot;copy numbre gain&quot;, &quot;GAIN&quot;, tempusoncoprint$alteration)
+
+tempusoncoprint$alteration &lt;- ifelse (tempusoncoprint$typeofvariant==&quot;copy number loss&quot; | tempusoncoprint$typeofvariant==&quot;Copy number loss&quot; | tempusoncoprint$typeofvariant==&quot;Copy numberloss&quot; | tempusoncoprint$typeofvariant==&quot;Copy Number Loss&quot;, &quot;HETLOSS&quot;, tempusoncoprint$alteration)
+
+tempusoncoprint$variant &lt;- ifelse(tempusoncoprint$typeofvariant==&quot;frameshift&quot; | tempusoncoprint$typeofvariant==&quot;Frameshift&quot; | tempusoncoprint$typeofvariant==&quot;Frameshift - LOF&quot; | tempusoncoprint$typeofvariant==&quot;Frameshift VAF:&quot; | tempusoncoprint$typeofvariant==&quot;Frameshift- LOF&quot; | tempusoncoprint$typeofvariant==&quot;Frameshift- LOF VAF&quot; | tempusoncoprint$typeofvariant==&quot;frameshift-LOF&quot; | tempusoncoprint$typeofvariant==&quot;FrameshiftVAF:&quot; | tempusoncoprint$typeofvariant==&quot;Inframe deletion&quot; | tempusoncoprint$typeofvariant==&quot;Inframe deletion - GOF&quot; | tempusoncoprint$typeofvariant==&quot;inframe insertion&quot; | tempusoncoprint$typeofvariant==&quot;Inframe insertion&quot; | tempusoncoprint$typeofvariant==&quot;Inframe insertion - GOF&quot; | tempusoncoprint$typeofvariant==&quot;rameshift&quot; | tempusoncoprint$typeofvariant==&quot;Frameshift LOF&quot;, &quot;INFRAME&quot;, tempusoncoprint$variant)
+
+tempusoncoprint$variant &lt;- ifelse(tempusoncoprint$typeofvariant==&quot;Missense  variant&quot; | tempusoncoprint$typeofvariant==&quot;Missense varian(exon 10) - GOF&quot; | tempusoncoprint$typeofvariant==&quot;missense variant&quot; | tempusoncoprint$typeofvariant==&quot;Missense variant&quot; | tempusoncoprint$typeofvariant==&quot;Missense Variant&quot; | tempusoncoprint$typeofvariant==&quot;Missense variant -&quot; | tempusoncoprint$typeofvariant==&quot;Missense variant - GOF&quot; | tempusoncoprint$typeofvariant==&quot;Missense variant - LOF:&quot; | tempusoncoprint$typeofvariant==&quot;Missense variant (exon 10) - GOF&quot; | tempusoncoprint$typeofvariant==&quot;Missense variant (exon 10)- GOF&quot; | tempusoncoprint$typeofvariant==&quot;Missense variant (exon 14) - GOF&quot; | tempusoncoprint$typeofvariant==&quot;Missense variant (exon 21) - GOF&quot; | tempusoncoprint$typeofvariant==&quot;Missense variant (exon 21) - GOF VAF&quot; | tempusoncoprint$typeofvariant==&quot;Missense variant (exon 5) - GOF&quot; | tempusoncoprint$typeofvariant==&quot;Missense Variant (exon 8)- GOF&quot; | tempusoncoprint$typeofvariant==&quot;Missense Variant (exon 8)- GOF&quot; | tempusoncoprint$typeofvariant==&quot;Missense variant â\u0080\u0093 LOF&quot; | tempusoncoprint$typeofvariant==&quot;Missense variant GOF&quot; | tempusoncoprint$typeofvariant==&quot;Missense variant LOF&quot; | tempusoncoprint$typeofvariant==&quot;Missense variant -&quot; | tempusoncoprint$typeofvariant==&quot;Missense variant - GOF&quot; | tempusoncoprint$typeofvariant==&quot;Missense variant - LOF:&quot; | tempusoncoprint$typeofvariant==&quot;Missense variant- GOF&quot; | tempusoncoprint$typeofvariant==&quot;Missense variant LOF&quot; | tempusoncoprint$typeofvariant==&quot;Missense variant- LOF&quot; | tempusoncoprint$typeofvariant==&quot;Missense variant-LOF&quot; | tempusoncoprint$typeofvariant==&quot;Missense variant(exon 10) - GOF&quot; | tempusoncoprint$typeofvariant==&quot;Missense variant(exon 2) - GOF&quot; | tempusoncoprint$typeofvariant==&quot;Missense variant(exon 4) - GOF&quot; | tempusoncoprint$typeofvariant==&quot;Missense varian(exon 10) - GOF&quot; | tempusoncoprint$typeofvariant==&quot;Missense variant - LOF&quot; | tempusoncoprint$typeofvariant==&quot;Missesne variant&quot; | tempusoncoprint$typeofvariant==&quot;Missense variant -LOF&quot;, &quot;MISSENSE&quot;, tempusoncoprint$variant)
+
+tempusoncoprint$variant &lt;- ifelse(tempusoncoprint$typeofvariant==&quot;region variant&quot; | tempusoncoprint$typeofvariant==&quot;region variant- LOF&quot; | tempusoncoprint$typeofvariant==&quot;Splice&quot; | tempusoncoprint$typeofvariant==&quot;Splice region&quot; | tempusoncoprint$typeofvariant==&quot;Splice region vairant&quot; | tempusoncoprint$typeofvariant==&quot;Splice region vairant - LOF&quot; | tempusoncoprint$typeofvariant==&quot;splice region variant&quot; | tempusoncoprint$typeofvariant==&quot;Splice region variant&quot; | tempusoncoprint$typeofvariant==&quot;Splice region variant - LOF&quot; | tempusoncoprint$typeofvariant==&quot;Splice region variant -LOF&quot; | tempusoncoprint$typeofvariant==&quot;Splice region variant â\u0080\u0093 GOF&quot; | tempusoncoprint$typeofvariant==&quot;Splice region variant â\u0080\u0093 LOF&quot; | tempusoncoprint$typeofvariant==&quot;Splice region variant VAF&quot; | tempusoncoprint$typeofvariant==&quot;Splice region variant- GOF&quot; | tempusoncoprint$typeofvariant==&quot;Splice region variant- LOF&quot; | tempusoncoprint$typeofvariant==&quot;Splice region variant-(exon 3) â\u0080\u0093 GOF&quot;, &quot;PROMOTER&quot;, tempusoncoprint$variant)
+
+tempusoncoprint$variant &lt;- ifelse(tempusoncoprint$typeofvariant==&quot;Start loss&quot; | tempusoncoprint$typeofvariant==&quot;Start Loss&quot; | tempusoncoprint$typeofvariant==&quot;StartStop gain loss- LOF&quot; | tempusoncoprint$typeofvariant==&quot;stop gain&quot; | tempusoncoprint$typeofvariant==&quot;Stop gain&quot; | tempusoncoprint$typeofvariant==&quot;Stop Gain&quot; | tempusoncoprint$typeofvariant==&quot;Stop gain - LOF&quot; | tempusoncoprint$typeofvariant==&quot;Stop gain LOF&quot; | tempusoncoprint$typeofvariant==&quot;Stop gain VAF&quot; | tempusoncoprint$typeofvariant==&quot;Stop gain-&quot; | tempusoncoprint$typeofvariant==&quot;Stop gain- GOF&quot; | tempusoncoprint$typeofvariant==&quot;Stop gain-LOF&quot; | tempusoncoprint$typeofvariant==&quot;Stop loss&quot; | tempusoncoprint$typeofvariant==&quot;Stop gain(exon 4) - LOF&quot; | tempusoncoprint$typeofvariant==&quot;Stopgain&quot; | tempusoncoprint$typeofvariant==&quot;Stop gain- LOF&quot;, &quot;TRUNC&quot;, tempusoncoprint$variant)
+
+tempusoncoprint$variant &lt;- ifelse(is.na(tempusoncoprint$variant), &quot;OTHER&quot;, tempusoncoprint$variant)
+
+tempusoncoprint$alteration &lt;- ifelse (is.na(tempusoncoprint$alteration), as.character(tempusoncoprint$variant_name_P), tempusoncoprint$alteration)
+
+tempusoncoprint$alteration &lt;- ifelse (tempusoncoprint$alteration==&quot;&quot;, &quot;MUT&quot;, tempusoncoprint$alteration)
+
+tempusoncoprint &lt;- within(tempusoncoprint, rm(StudyID, variant_name_P, typeofvariant)) #Removing alteration if not using CBioportal for Oncoprinter
+
+write.table (tempusoncoprint, file=&quot;oncoprint.tsv&quot;, sep=&quot;\t&quot;, col.names=FALSE, row.names=FALSE)</code></pre>
 <pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
   0.000   1.300   2.900   7.562   6.050  76.300 </code></pre>
 <p><img src="figure/Tempus.Rmd/Ongoing%20mutational%20summary-1.png" width="672" style="display: block; margin: auto;" /></p>
@@ -1321,7 +1388,7 @@ Sheila Rajagopal
 </tbody>
 </table>
 <p></details></p>
-<p>Only 88 of 139 reports contained percentile information.</p>
+<p>Only 88 of 139 reports contained percentile information; this was not included for analysis. Tumor mutational burden was measured in m/MB.</p>
 <table>
 <caption>Distribution of MSI status</caption>
 <thead>
@@ -1355,449 +1422,41 @@ Sheila Rajagopal
 <td align="left">Undetermined</td>
 <td align="right">6</td>
 </tr>
-</tbody>
-</table>
-<table>
-<caption>Distribution of variant types across all mutations</caption>
-<thead>
-<tr class="header">
-<th align="left">Variant type</th>
-<th align="right">Freq</th>
-</tr>
-</thead>
-<tbody>
 <tr class="odd">
-<td align="left">Missense variant</td>
-<td align="right">1807</td>
-</tr>
-<tr class="even">
-<td align="left">Stop gain</td>
-<td align="right">412</td>
-</tr>
-<tr class="odd">
-<td align="left">Splice region variant</td>
-<td align="right">407</td>
-</tr>
-<tr class="even">
-<td align="left">Copy number gain</td>
-<td align="right">319</td>
-</tr>
-<tr class="odd">
-<td align="left">Copy number loss</td>
-<td align="right">319</td>
-</tr>
-<tr class="even">
-<td align="left">Frameshift</td>
-<td align="right">255</td>
-</tr>
-<tr class="odd">
-<td align="left">Frameshift- LOF</td>
-<td align="right">64</td>
-</tr>
-<tr class="even">
-<td align="left">Stop gain- LOF</td>
-<td align="right">57</td>
-</tr>
-<tr class="odd">
-<td align="left">Inframe deletion</td>
-<td align="right">51</td>
-</tr>
-<tr class="even">
-<td align="left">Splice region</td>
-<td align="right">36</td>
-</tr>
-<tr class="odd">
-<td align="left">Missense variant- LOF</td>
-<td align="right">29</td>
-</tr>
-<tr class="even">
-<td align="left">Missense variant - LOF</td>
-<td align="right">26</td>
-</tr>
-<tr class="odd">
-<td align="left">Frameshift - LOF</td>
-<td align="right">22</td>
-</tr>
-<tr class="even">
-<td align="left">copy number loss</td>
-<td align="right">19</td>
-</tr>
-<tr class="odd">
-<td align="left">Stop gain - LOF</td>
-<td align="right">19</td>
-</tr>
-<tr class="even">
-<td align="left">Splice region variant- LOF</td>
-<td align="right">18</td>
-</tr>
-<tr class="odd">
-<td align="left">copy number gain</td>
-<td align="right">17</td>
-</tr>
-<tr class="even">
-<td align="left">Missense variant (exon 10) - GOF</td>
-<td align="right">17</td>
-</tr>
-<tr class="odd">
-<td align="left">missense variant</td>
-<td align="right">14</td>
-</tr>
-<tr class="even">
-<td align="left">Missense variant (exon 21) - GOF</td>
-<td align="right">13</td>
-</tr>
-<tr class="odd">
-<td align="left">Copy Number gain</td>
-<td align="right">11</td>
-</tr>
-<tr class="even">
-<td align="left">Missense variant- GOF</td>
-<td align="right">10</td>
-</tr>
-<tr class="odd">
-<td align="left">region variant</td>
-<td align="right">8</td>
-</tr>
-<tr class="even">
-<td align="left">Start loss</td>
-<td align="right">8</td>
-</tr>
-<tr class="odd">
-<td align="left">frameshift</td>
-<td align="right">4</td>
-</tr>
-<tr class="even">
-<td align="left">Frameshift VAF:</td>
-<td align="right">4</td>
-</tr>
-<tr class="odd">
-<td align="left">Inframe insertion</td>
-<td align="right">4</td>
-</tr>
-<tr class="even">
-<td align="left">Missense variant -LOF</td>
-<td align="right">4</td>
-</tr>
-<tr class="odd">
-<td align="left">Missense variant (exon 5) - GOF</td>
-<td align="right">4</td>
-</tr>
-<tr class="even">
-<td align="left">Splice region vairant</td>
-<td align="right">4</td>
-</tr>
-<tr class="odd">
-<td align="left">Splice region variant- GOF</td>
-<td align="right">4</td>
-</tr>
-<tr class="even">
-<td align="left"></td>
-<td align="right">3</td>
-</tr>
-<tr class="odd">
-<td align="left">Splice region variant - LOF</td>
-<td align="right">3</td>
-</tr>
-<tr class="even">
-<td align="left">stop gain</td>
-<td align="right">3</td>
-</tr>
-<tr class="odd">
-<td align="left">Stop gain-</td>
-<td align="right">3</td>
-</tr>
-<tr class="even">
-<td align="left">Variant</td>
-<td align="right">3</td>
-</tr>
-<tr class="odd">
-<td align="left">Copy Number Loss</td>
-<td align="right">2</td>
-</tr>
-<tr class="even">
-<td align="left">Frameshift LOF</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
-<td align="left">Missense Variant</td>
-<td align="right">2</td>
-</tr>
-<tr class="even">
-<td align="left">Missense variant - GOF</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
-<td align="left">Missense variant (exon 10)- GOF</td>
-<td align="right">2</td>
-</tr>
-<tr class="even">
-<td align="left">Missense variant (exon 14) - GOF</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
-<td align="left">Missense variant â LOF</td>
-<td align="right">2</td>
-</tr>
-<tr class="even">
-<td align="left">Missense variant LOF</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
-<td align="left">Missense variant-LOF</td>
-<td align="right">2</td>
-</tr>
-<tr class="even">
-<td align="left">Missense variant(exon 2) - GOF</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
-<td align="left">splice region variant</td>
-<td align="right">2</td>
-</tr>
-<tr class="even">
-<td align="left">Splice region variant â LOF</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
-<td align="left">Splice region variant VAF</td>
-<td align="right">2</td>
-</tr>
-<tr class="even">
-<td align="left">Stop Gain</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
-<td align="left">Stop gain LOF</td>
-<td align="right">2</td>
-</tr>
-<tr class="even">
-<td align="left">Copy numberloss</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">copy numbre gain</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">Frameshift- LOF VAF</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">frameshift-LOF</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">FrameshiftVAF:</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">Inframe deletion - GOF</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">inframe insertion</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">Inframe insertion - GOF</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">Missense variant</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">Missense varian(exon 10) - GOF</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">Missense variant -</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">Missense variant (exon 21) - GOF VAF</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">Missense variant (exon 8) - GOF</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">Missense Variant (exon 8)- GOF</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">Missense variant GOF</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">Missense variant(exon 10) - GOF</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">Missense variant(exon 4) - GOF</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">Missesne variant</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">rameshift</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">region variant- LOF</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">Splice</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">Splice region vairant - LOF</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">Splice region variant -LOF</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">Splice region variant â GOF</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">Splice region variant-(exon 3) â GOF</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">Start Loss</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">StartStop gain loss- LOF</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">Stop gain VAF</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">Stop gain- GOF</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">Stop gain-LOF</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">Stop gain(exon 4) - LOF</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">Stop loss</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">Stopgain</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">Missense variants, splice region variants</td>
-<td align="right">, stop gains and copy number gains/losses were the best represented in our cohort.</td>
+<td align="left">The majority of patients had stable MSI status in their tumors; on</td>
+<td align="right">ly 1.5% showed MSI unstable disease.</td>
 </tr>
 </tbody>
 </table>
+<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA&#39;s 
+0.00000 0.06972 0.10595 0.11215 0.15008 0.30414      58 </code></pre>
+<p><img src="figure/Tempus.Rmd/Immune%20summary-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA&#39;s 
+ 0.1271  0.2409  0.2714  0.2718  0.3018  0.3944      58 </code></pre>
+<p><img src="figure/Tempus.Rmd/Immune%20summary-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA&#39;s 
+0.03134 0.09566 0.13081 0.12943 0.16956 0.26398      58 </code></pre>
+<p><img src="figure/Tempus.Rmd/Immune%20summary-3.png" width="672" style="display: block; margin: auto;" /></p>
+<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA&#39;s 
+ 0.2139  0.3529  0.3711  0.3835  0.4171  0.5216      58 </code></pre>
+<p><img src="figure/Tempus.Rmd/Immune%20summary-4.png" width="672" style="display: block; margin: auto;" /></p>
+<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA&#39;s 
+0.04802 0.06850 0.09240 0.10309 0.12424 0.22419      58 </code></pre>
+<p><img src="figure/Tempus.Rmd/Immune%20summary-5.png" width="672" style="display: block; margin: auto;" /></p>
+<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA&#39;s 
+0.00000 0.05514 0.10400 0.11939 0.16116 0.82456      58 </code></pre>
+<p><img src="figure/Tempus.Rmd/Immune%20summary-6.png" width="672" style="display: block; margin: auto;" /> 74 patients had “immune profile” data as calculated by Tempus. This represents a derivation from the RNA-seq data that was developed from a machine learning algorithm, NOT a pathology-based assessment. The immune score is a “support vector regression model for the immune cell estimates and formal thresholds for high or low are not in place as of yet.”</p>
 </div>
-<div id="recurrence-and-survival-among-different-clinical-subgroups" class="section level1">
-<h1>Recurrence and survival among different clinical subgroups</h1>
-<pre class="r"><code>surv_object &lt;- Surv(time = tempusmergedupclean$timefu, event = tempusmergedupclean$recurrenceposneg)
-
-fit.coxph &lt;- coxph(surv_object ~ tempusmergedupclean$age50 + tempusmergedupclean$neoadj + tempusmergedupclean$subtype + tempusmergedupclean$bw + tempusmergedupclean$stage14,
-                   data = tempusmergedupclean)
-                   
-ggforest(fit.coxph, data = tempusmergedupclean, main=&quot;Hazard ratios of clinical variables prior to assessing mutational variables - Recurrence &quot;)</code></pre>
-<pre><code>Warning: Removed 1 rows containing missing values (geom_errorbar).</code></pre>
-<p><img src="figure/Tempus.Rmd/unnamed-chunk-1-1.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of unnamed-chunk-1-1.png:</em></summary>
-<table style="border-collapse:separate; border-spacing:5px;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Version
-</th>
-<th style="text-align:left;">
-Author
-</th>
-<th style="text-align:left;">
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-fbe8a8e
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-12
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-99339fe
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-10
-</td>
-</tr>
-</tbody>
-</table>
-<p></details></p>
-<pre class="r"><code>surv_object &lt;- Surv(time = tempusmergedupclean$timefu, event = as.numeric(tempusmergedupclean$vitalstatus))
-
-fit.coxph &lt;- coxph(surv_object ~ tempusmergedupclean$age50 + tempusmergedupclean$neoadj + tempusmergedupclean$subtype + tempusmergedupclean$bw + tempusmergedupclean$stage14,
-                   data = tempusmergedupclean)
-                   
-ggforest(fit.coxph, data = tempusmergedupclean, main=&quot;Hazard ratios of clinical variables prior to assessing mutational variables - Survival&quot;)</code></pre>
-<pre><code>Warning: Removed 1 rows containing missing values (geom_errorbar).</code></pre>
-<p><img src="figure/Tempus.Rmd/unnamed-chunk-1-2.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of unnamed-chunk-1-2.png:</em></summary>
-<table style="border-collapse:separate; border-spacing:5px;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Version
-</th>
-<th style="text-align:left;">
-Author
-</th>
-<th style="text-align:left;">
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-fbe8a8e
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-12
-</td>
-</tr>
-</tbody>
-</table>
-<p></details></p>
+<div id="recurrence-and-survival-by-ethnicity-in-our-cohort" class="section level1">
+<h1>Recurrence and survival by ethnicity in our cohort</h1>
+<pre class="r"><code>fitsurvival &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$bw, 
+               data=tempusmergedupclean)
+ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, title=&quot;Survival of patients by ethnicity&quot;)</code></pre>
+<p><img src="figure/Tempus.Rmd/Ethnicity%20recurrence%20and%20survival-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>fitrecurrence &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$recurrenceposneg)) ~tempusmergedupclean$bw, 
+               data=tempusmergedupclean)
+ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table=&quot;percentage&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, ylab=&quot;Recurrence&quot;, title=&quot;Likelihood of recurrence in patients by ethnicity&quot;)</code></pre>
+<p><img src="figure/Tempus.Rmd/Ethnicity%20recurrence%20and%20survival-2.png" width="672" style="display: block; margin: auto;" /></p>
 </div>
 <div id="mutations-among-different-subgroups---subtype-and-race-not-significant" class="section level1">
 <h1>Mutations among different subgroups - Subtype and race (Not significant)</h1>
@@ -1859,31 +1518,78 @@ headblack</code></pre>
 
 data:  headwhite and headblack
 X-squared = 15, df = 12, p-value = 0.2414</code></pre>
-<p>We did not see a significant difference in our cohort between breast cancer subtype or race between the top 5 most mutated genes.</p>
-</div>
-<div id="mutations-among-different-subgroups---patients-younger-than-50" class="section level1">
-<h1>Mutations among different subgroups - Patients younger than 50</h1>
-<pre class="r"><code>subtypeyoung &lt;- tempusmergedupclean %&gt;% filter(age50==1)
-allgenesyoung&lt;- colSums(!((subtypeyoung[,105:663])==&quot;&quot;))
-allgenesyoung[&quot;ERBB2/HER2&quot;] &lt;- sum(allgenesyoung[&quot;ERBB2&quot;], allgenesyoung[&quot;ERBB2 (HER2)&quot;], allgenesyoung[&quot;ERBB2(HER2)&quot;], allgenesyoung[&quot;ERBB2HER2)&quot;])
-headyoung &lt;- head(sort(allgenesyoung, decreasing=TRUE), 5)
-headyoung</code></pre>
-<pre><code>  TP53   MCL1  KMT2D    FLG NOTCH1 
-    32     20     13     12     12 </code></pre>
-<pre class="r"><code>subtypeold &lt;- tempusmergedupclean %&gt;% filter(age50==0)
-allgenesold&lt;- colSums(!((subtypeold[,105:663])==&quot;&quot;))
-allgenesold[&quot;ERBB2/HER2&quot;] &lt;- sum(allgenesold[&quot;ERBB2&quot;], allgenesold[&quot;ERBB2 (HER2)&quot;], allgenesold[&quot;ERBB2(HER2)&quot;], allgenesold[&quot;ERBB2HER2)&quot;])
-headold &lt;- head(sort(allgenesold, decreasing=TRUE), 5)
-headold</code></pre>
-<pre><code>      TP53     PIK3CA       MCL1 ERBB2/HER2       FAT1 
-        40         28         24         23         17 </code></pre>
-<pre class="r"><code>chisq.test(headold, headyoung)</code></pre>
-<pre><code>
-    Pearson&#39;s Chi-squared test
+<p>We did not see a significant difference in our cohort between breast cancer subtype or race and the most commonly mutated genes (outside of overrepresentation of ERBB2/HER2 in the HER2+ subtype).</p>
+<pre class="r"><code>tempusmergedupclean$TP53YN &lt;- ifelse (tempusmergedupclean$TP53==&quot;&quot;, 0, 1)
 
-data:  headold and headyoung
-X-squared = 15, df = 12, p-value = 0.2414</code></pre>
-<p>We did not see a a statistically significant difference in the distribution of genes in the younger patients relative to the older patients (for the top 5 genes).</p>
+fitsurvival &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$TP53YN, 
+               data=tempusmergedupclean)
+ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, title=&quot;Survival of patients by TP53 mutation status&quot;)</code></pre>
+<p><img src="figure/Tempus.Rmd/Outcomes%20by%20mutation%20status-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>fitrecurrence &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$recurrenceposneg)) ~tempusmergedupclean$TP53YN, 
+               data=tempusmergedupclean)
+ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, ylab=&quot;Recurrence&quot;, title=&quot;Likelihood of recurrence in patients by TP53 mutation status&quot;)</code></pre>
+<p><img src="figure/Tempus.Rmd/Outcomes%20by%20mutation%20status-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>tempusmergedupclean$BRCAYN &lt;- ifelse (tempusmergedupclean$BRCA1==&quot;&quot; &amp; tempusmergedupclean$BRCA2==&quot;&quot;, 0, 1)
+
+fitsurvival &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$BRCAYN, 
+               data=tempusmergedupclean)
+ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, title=&quot;Survival of patients by BRCA mutation status&quot;)</code></pre>
+<p><img src="figure/Tempus.Rmd/Outcomes%20by%20mutation%20status-3.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>fitrecurrence &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$recurrenceposneg)) ~tempusmergedupclean$BRCAYN, 
+               data=tempusmergedupclean)
+ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, ylab=&quot;Recurrence&quot;, title=&quot;Likelihood of recurrence in patients by BRCA mutation status&quot;)</code></pre>
+<p><img src="figure/Tempus.Rmd/Outcomes%20by%20mutation%20status-4.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>tempusmergedupclean$ARYN &lt;- ifelse (tempusmergedupclean$AR==&quot;&quot;, 0, 1)
+
+fitsurvival &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$ARYN, 
+               data=tempusmergedupclean)
+ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, title=&quot;Survival of patients by AR mutation status&quot;)</code></pre>
+<p><img src="figure/Tempus.Rmd/Outcomes%20by%20mutation%20status-5.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>fitrecurrence &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$recurrenceposneg)) ~tempusmergedupclean$ARYN, 
+               data=tempusmergedupclean)
+ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, ylab=&quot;Recurrence&quot;, title=&quot;Likelihood of recurrence in patients by AR mutation status&quot;)</code></pre>
+<p><img src="figure/Tempus.Rmd/Outcomes%20by%20mutation%20status-6.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>tempusmergedupclean$PIK3CAYN &lt;- ifelse (tempusmergedupclean$PIK3CA==&quot;&quot;, 0, 1)
+
+fitsurvival &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$PIK3CAYN, 
+               data=tempusmergedupclean)
+ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, title=&quot;Survival of patients by PIK3CA mutation status&quot;)</code></pre>
+<p><img src="figure/Tempus.Rmd/Outcomes%20by%20mutation%20status-7.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>fitrecurrence &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$recurrenceposneg)) ~tempusmergedupclean$PIK3CAYN, 
+               data=tempusmergedupclean)
+ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, ylab=&quot;Recurrence&quot;, title=&quot;Likelihood of recurrence in patients by PIK3CA mutation status&quot;)</code></pre>
+<p><img src="figure/Tempus.Rmd/Outcomes%20by%20mutation%20status-8.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="immune-profile-data-and-association-with-survival-and-recurrence" class="section level1">
+<h1>Immune profile data and association with survival and recurrence</h1>
+<pre class="r"><code>tempusmergedupclean$TMBhighlow &lt;- ifelse(tempusmergedupclean$TMB&gt;20, 1, 0)
+  
+fitsurvival &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$TMBhighlow, 
+               data=tempusmergedupclean)
+ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, title=&quot;Survival of patients by TMB mutation status (high&gt;20 m/MB)&quot;)</code></pre>
+<p><img src="figure/Tempus.Rmd/Immune%20profile%20recurrence%20and%20survival-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>fitrecurrence &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$recurrenceposneg)) ~tempusmergedupclean$TMBhighlow, 
+               data=tempusmergedupclean)
+ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, ylab=&quot;Recurrence&quot;, title=&quot;Likelihood of recurrence in patients by TMB (high&gt;20 m/mB&quot;)</code></pre>
+<p><img src="figure/Tempus.Rmd/Immune%20profile%20recurrence%20and%20survival-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>tempusmergedupclean$immunemedian &lt;- ifelse(tempusmergedupclean$immune&gt;0.12, 1, 0)
+
+fitsurvival &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$immunemedian, 
+               data=tempusmergedupclean)
+ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, title=&quot;Survival of patients by immune score greater or less than the median&quot;)</code></pre>
+<p><img src="figure/Tempus.Rmd/Immune%20profile%20recurrence%20and%20survival-3.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>fitrecurrence &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$recurrenceposneg)) ~tempusmergedupclean$immunemedian, 
+               data=tempusmergedupclean)
+ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, ylab=&quot;Recurrence&quot;, title=&quot;Likelihood of recurrence in patients by immune score greater or less than the median&quot;)</code></pre>
+<p><img src="figure/Tempus.Rmd/Immune%20profile%20recurrence%20and%20survival-4.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>surv_object &lt;- Surv(time=tempusmergedupclean$timefu, event=as.numeric(tempusmergedupclean$vitalstatussurv))
+     
+fit.coxph &lt;- coxph(surv_object ~ tempusmergedupclean$TMBhighlow + tempusmergedupclean$immunemedian,
+                   data = tempusmergedupclean)
+                   
+ggforest(fit.coxph, data = tempusmergedupclean, main=&quot;Comparative hazard ratios of immune measurements in patient tumors&quot;)</code></pre>
+<p><img src="figure/Tempus.Rmd/Immune%20profile%20recurrence%20and%20survival-5.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Based on Chalmers et al (<a href="https://genomemedicine.biomedcentral.com/track/pdf/10.1186/s13073-017-0424-2?site=genomemedicine.biomedcentral.com" class="uri">https://genomemedicine.biomedcentral.com/track/pdf/10.1186/s13073-017-0424-2?site=genomemedicine.biomedcentral.com</a>), we defined a high TMB as &gt;20. We saw a nonsignificant trend towards increased mutational burden and immune infiltrate being associated with worse survival in these patients.</p>
 <pre class="r"><code>tempusneo &lt;- tempusmergedupclean %&gt;% filter(tempusmergedupclean$neoadj==1 &amp; !(StudyID==&quot;MB-0138&quot;) &amp; !(StudyID==&quot;MB-1020&quot;) &amp; !(StudyID==&quot;MB-1049&quot;))
 
 kable(table(tempusneo$recurrenceposneg), caption = &quot;Neoadjuvant patients who experienced recurrence&quot;, col.names=c(&quot;Recurrence&quot;, &quot;Freq&quot;))</code></pre>
@@ -1906,12 +1612,12 @@ kable(table(tempusneo$recurrenceposneg), caption = &quot;Neoadjuvant patients wh
 </tr>
 </tbody>
 </table>
-<pre class="r"><code>kable(table(tempusneo$vitalstatus), caption = &quot;Neoadjuvant patients who experienced recurrence&quot;, col.names=c(&quot;Recurrence&quot;, &quot;Freq&quot;))</code></pre>
+<pre class="r"><code>kable(table(tempusneo$vitalstatus), caption = &quot;Neoadjuvant patients who did not survive (0=died)&quot;, col.names=c(&quot;Vital status&quot;, &quot;Freq&quot;))</code></pre>
 <table>
-<caption>Neoadjuvant patients who experienced recurrence</caption>
+<caption>Neoadjuvant patients who did not survive (0=died)</caption>
 <thead>
 <tr class="header">
-<th align="left">Recurrence</th>
+<th align="left">Vital status</th>
 <th align="right">Freq</th>
 </tr>
 </thead>
@@ -1926,12 +1632,9 @@ kable(table(tempusneo$recurrenceposneg), caption = &quot;Neoadjuvant patients wh
 </tr>
 </tbody>
 </table>
-<pre class="r"><code>neoadjTP53&lt;- tempusneo[,&quot;TP53&quot;]
-neoadjTP53 &lt;- ifelse (!(neoadjTP53==&quot;&quot;), 1, 0)
-
-surv_object &lt;- Surv(time = tempusneo$timefu, event = tempusneo$recurrenceposneg)
-fit2&lt;- survfit(Surv(tempusneo$TMB) ~ recurrenceposneg, data = tempusneo)
-ggsurvplot(fit2, pval=TRUE)</code></pre>
+<pre class="r"><code>fitsurvival &lt;- survfit(Surv(time=tempusneo$timefu, as.numeric(tempusneo$vitalstatussurv)) ~tempusneo$TP53YN, 
+               data=tempusneo)
+ggsurvplot(fitsurvival, data=tempusneo, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, title=&quot;Survival of neoadjuvant patients by TP53 status&quot;)</code></pre>
 <p><img src="figure/Tempus.Rmd/Neoadjuvant%20patients-1.png" width="672" style="display: block; margin: auto;" /></p>
 <details> <summary><em>Expand here to see past versions of Neoadjuvant patients-1.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
@@ -1963,10 +1666,9 @@ Sheila Rajagopal
 </tbody>
 </table>
 <p></details></p>
-<pre class="r"><code>fit.coxph &lt;- coxph(surv_object ~ tempusneo$TMB,
-                   data = tempusneo)
-                   
-ggforest(fit.coxph, data = tempusneo, main=&quot;Hazard ratios of TMB in neoadjuvant patients - Recurrence&quot;)</code></pre>
+<pre class="r"><code>fitrecurrence &lt;- survfit(Surv(time=tempusneo$timefu, as.numeric(tempusneo$recurrenceposneg)) ~tempusneo$TP53YN, 
+               data=tempusneo)
+ggsurvplot(fitrecurrence, data=tempusneo, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, ylab=&quot;Recurrence&quot;, title=&quot;Likelihood of recurrence in neoadjuvant patients by TP53 mutation status&quot;)</code></pre>
 <p><img src="figure/Tempus.Rmd/Neoadjuvant%20patients-2.png" width="672" style="display: block; margin: auto;" /></p>
 <details> <summary><em>Expand here to see past versions of Neoadjuvant patients-2.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
@@ -1998,76 +1700,6 @@ Sheila Rajagopal
 </tbody>
 </table>
 <p></details></p>
-<pre class="r"><code>surv_object &lt;- Surv(time = tempusneo$timefu, event = as.numeric(tempusneo$vitalstatus))
-fit2&lt;- survfit(Surv(tempusneo$TMB) ~ vitalstatus, data = tempusneo)
-ggsurvplot(fit2, pval=TRUE)</code></pre>
-<p><img src="figure/Tempus.Rmd/Neoadjuvant%20patients-3.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of Neoadjuvant patients-3.png:</em></summary>
-<table style="border-collapse:separate; border-spacing:5px;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Version
-</th>
-<th style="text-align:left;">
-Author
-</th>
-<th style="text-align:left;">
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-fbe8a8e
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-12
-</td>
-</tr>
-</tbody>
-</table>
-<p></details></p>
-<pre class="r"><code>fit.coxph &lt;- coxph(surv_object ~ tempusneo$TMB,
-                   data = tempusneo)
-                   
-ggforest(fit.coxph, data = tempusneo, main=&quot;Hazard ratios of TMB in neoadjuvant patients - Recurrence&quot;)</code></pre>
-<p><img src="figure/Tempus.Rmd/Neoadjuvant%20patients-4.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of Neoadjuvant patients-4.png:</em></summary>
-<table style="border-collapse:separate; border-spacing:5px;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Version
-</th>
-<th style="text-align:left;">
-Author
-</th>
-<th style="text-align:left;">
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-fbe8a8e
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-12
-</td>
-</tr>
-</tbody>
-</table>
-<p></details></p>
-<p>TMB was nonsignifiantly associated with recurrence when increased in neoadjuvant patients, but our sample size was very small. This relationship was inverted but also nonsignificant for survival.</p>
 </div>
 <div id="heterogeneity-between-sentinel-lymph-nodes-and-primary-tumors" class="section level1">
 <h1>Heterogeneity between sentinel lymph nodes and primary tumors</h1>
@@ -2086,648 +1718,6 @@ Sheila Rajagopal
 <pre><code>PIK3CA   TP53 ARID1A ARID5B  ASXL1    ATM 
      4      2      1      1      1      1 </code></pre>
 <p>We did see heterogeneity between the mutations represented in the lymph nodes and the mutations represented in the primary breast tumors for those samples. Two of the lymph nodes had 20% purity, 2 had 40% purity and 2 had 50% purity.</p>
-</div>
-<div id="exploring-what-mutation-distribution-means-from-a-clinical-standpoint" class="section level1">
-<h1>Exploring what mutation distribution means from a clinical standpoint</h1>
-<p>We have the variables of <em>genecount (number of uniquely mutated genes for an individual patient) </em>maxvariantcount (maximum frequency of variants for an individual gene for an individual patient) *TMB (Overall tumor mutational burden as measured by Tempus)</p>
-<pre class="r"><code>summary(tempusmergedupclean$genecount)</code></pre>
-<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-   1.00    7.00   12.00   24.72   24.00  184.00 </code></pre>
-<pre class="r"><code>table(tempusmergedupclean$genecount)</code></pre>
-<pre><code>
-  1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18 
-  3   6   5   5   7   5   4  11   9   6   2   7   5   2   1   2   7   2 
- 19  20  21  23  24  26  27  29  31  33  35  42  43  45  48  49  51  52 
-  1   1   1   2   2   2   1   1   1   2   1   1   1   2   2   1   1   2 
- 59  61  87  95  96  97  99 109 123 145 160 182 184 
-  1   1   1   1   1   1   1   1   1   1   1   1   1 </code></pre>
-<pre class="r"><code>hist(tempusmergedupclean$genecount, main=&quot;Distribution of uniquely mutated genes per patient sample&quot;)</code></pre>
-<p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-1-1.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of Mutation distribution per patient-1-1.png:</em></summary>
-<table style="border-collapse:separate; border-spacing:5px;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Version
-</th>
-<th style="text-align:left;">
-Author
-</th>
-<th style="text-align:left;">
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-99339fe
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-10
-</td>
-</tr>
-</tbody>
-</table>
-<p></details></p>
-<pre class="r"><code>summary(tempusmergedupclean$maxvariantcount)</code></pre>
-<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-  1.000   1.000   1.000   1.866   2.000   9.000 </code></pre>
-<pre class="r"><code>table(tempusmergedupclean$maxvariantcount)</code></pre>
-<pre><code>
- 1  2  3  4  5  6  7  8  9 
-78 25  8  8  2  2  2  1  1 </code></pre>
-<pre class="r"><code>hist(tempusmergedupclean$maxvariantcount, main=&quot;Distribution of highest number of variants\n for a single gene per patient sample&quot;)</code></pre>
-<p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-1-2.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of Mutation distribution per patient-1-2.png:</em></summary>
-<table style="border-collapse:separate; border-spacing:5px;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Version
-</th>
-<th style="text-align:left;">
-Author
-</th>
-<th style="text-align:left;">
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-99339fe
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-10
-</td>
-</tr>
-</tbody>
-</table>
-<p></details></p>
-<pre class="r"><code>summary(tempusmergedupclean$TMB)</code></pre>
-<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-  0.000   1.300   2.900   7.562   6.050  76.300 </code></pre>
-<pre class="r"><code>table(tempusmergedupclean$TMB)</code></pre>
-<pre><code>
-   0  0.4  0.8  1.3  1.7  2.1  2.5  2.9  3.3  3.8  4.2  4.6    5  5.4  6.7 
-   4   13    8   16    6   12    4    5   11    2    3    2    3    6    1 
- 7.5  7.9  8.8 11.3 11.7 12.1 12.5 13.8 14.2 14.6 16.3 20.4 23.3 26.7 28.8 
-   3    2    1    2    1    1    2    1    2    1    1    2    1    1    1 
-30.4   35 35.4 42.5 57.5 58.3 71.3 76.3 
-   2    1    1    1    1    1    1    1 </code></pre>
-<pre class="r"><code>hist(tempusmergedupclean$TMB, main=&quot;Distribution of tumor mutational burden (as measured by Tempus)&quot;)</code></pre>
-<p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-1-3.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of Mutation distribution per patient-1-3.png:</em></summary>
-<table style="border-collapse:separate; border-spacing:5px;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Version
-</th>
-<th style="text-align:left;">
-Author
-</th>
-<th style="text-align:left;">
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-7fbf15a
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-10
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-99339fe
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-10
-</td>
-</tr>
-</tbody>
-</table>
-<p></details></p>
-<pre class="r"><code>cor(tempusmergedupclean$genecount, tempusmergedupclean$maxvariantcount)</code></pre>
-<pre><code>[1] 0.8499669</code></pre>
-<pre class="r"><code>cor(tempusmergedupclean$genecount, tempusmergedupclean$TMB)</code></pre>
-<pre><code>[1] 0.9626302</code></pre>
-<pre class="r"><code>cor(tempusmergedupclean$maxvariantcount, tempusmergedupclean$TMB)</code></pre>
-<pre><code>[1] 0.8174039</code></pre>
-<p>We see a long tail towards the right in terms of frequency of uniquely mutated genes, number of variants for a single gene and TMB, suggesting (as could be expected), that there are a few samples that have a significant burden of mutations in some form. There is good correlaton between gene count, max variant count and TMB.</p>
-<pre class="r"><code>ggplot()+
-  geom_line(data=tempusmergedupclean, aes(x=tempusmergedupclean$TMB, y=tempusmergedupclean$maxvariantcount), size=1, color=&quot;red&quot;)+
-  geom_line(data=tempusmergedupclean, aes(x=tempusmergedupclean$TMB, y=tempusmergedupclean$genecount), size=1, color=&quot;blue&quot;)</code></pre>
-<p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-2-1.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of Mutation distribution per patient-2-1.png:</em></summary>
-<table style="border-collapse:separate; border-spacing:5px;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Version
-</th>
-<th style="text-align:left;">
-Author
-</th>
-<th style="text-align:left;">
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-7fbf15a
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-10
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-99339fe
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-10
-</td>
-</tr>
-</tbody>
-</table>
-<p></details></p>
-<p>Blue relfects gene count, red reflects max variant count. These track in a relatively linear fashion with TMB.</p>
-<pre class="r"><code>surv_object &lt;- Surv(time = tempusmergedupclean$timefu, event = tempusmergedupclean$recurrenceposneg)
-
-fit.coxph &lt;- coxph(surv_object ~ tempusmergedupclean$genecount + tempusmergedupclean$TMB + tempusmergedupclean$maxvariantcount, 
-                   data = tempusmergedupclean)
-                   
-ggforest(fit.coxph, data = tempusmergedupclean, main=&quot;Comparative hazard ratios of recurrence associated \n with markers of mutational heterogeneity&quot;)</code></pre>
-<p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-3-1.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of Mutation distribution per patient-3-1.png:</em></summary>
-<table style="border-collapse:separate; border-spacing:5px;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Version
-</th>
-<th style="text-align:left;">
-Author
-</th>
-<th style="text-align:left;">
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-fbe8a8e
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-12
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-7fbf15a
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-10
-</td>
-</tr>
-</tbody>
-</table>
-<p></details></p>
-<pre class="r"><code>fit1&lt;- survfit(Surv(tempusmergedupclean$genecount) ~ recurrenceposneg, data = tempusmergedupclean)
-ggsurvplot(fit1, pval=TRUE)</code></pre>
-<p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-3-2.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of Mutation distribution per patient-3-2.png:</em></summary>
-<table style="border-collapse:separate; border-spacing:5px;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Version
-</th>
-<th style="text-align:left;">
-Author
-</th>
-<th style="text-align:left;">
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-fbe8a8e
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-12
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-7fbf15a
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-10
-</td>
-</tr>
-</tbody>
-</table>
-<p></details></p>
-<pre class="r"><code>fit2&lt;- survfit(Surv(log(tempusmergedupclean$maxvariantcount)) ~ recurrenceposneg, data = tempusmergedupclean)
-ggsurvplot(fit2, pval=TRUE)</code></pre>
-<p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-3-3.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of Mutation distribution per patient-3-3.png:</em></summary>
-<table style="border-collapse:separate; border-spacing:5px;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Version
-</th>
-<th style="text-align:left;">
-Author
-</th>
-<th style="text-align:left;">
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-fbe8a8e
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-12
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-7fbf15a
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-10
-</td>
-</tr>
-</tbody>
-</table>
-<p></details></p>
-<pre class="r"><code>fit3&lt;- survfit(Surv(tempusmergedupclean$TMB) ~ recurrenceposneg, data = tempusmergedupclean)
-ggsurvplot(fit3, pval=TRUE)</code></pre>
-<p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-3-4.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of Mutation distribution per patient-3-4.png:</em></summary>
-<table style="border-collapse:separate; border-spacing:5px;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Version
-</th>
-<th style="text-align:left;">
-Author
-</th>
-<th style="text-align:left;">
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-fbe8a8e
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-12
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-7fbf15a
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-10
-</td>
-</tr>
-</tbody>
-</table>
-<p></details></p>
-<pre class="r"><code>surv_object &lt;- Surv(time = tempusmergedupclean$timefu, event = as.numeric(tempusmergedupclean$vitalstatus))
-
-fit.coxph &lt;- coxph(surv_object ~ tempusmergedupclean$genecount + tempusmergedupclean$TMB + tempusmergedupclean$maxvariantcount, 
-                   data = tempusmergedupclean)
-                   
-ggforest(fit.coxph, data = tempusmergedupclean, main=&quot;Comparative hazard ratios of recurrence associated \n with markers of mutational heterogeneity&quot;)</code></pre>
-<p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-3-5.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of Mutation distribution per patient-3-5.png:</em></summary>
-<table style="border-collapse:separate; border-spacing:5px;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Version
-</th>
-<th style="text-align:left;">
-Author
-</th>
-<th style="text-align:left;">
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-fbe8a8e
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-12
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-7fbf15a
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-10
-</td>
-</tr>
-</tbody>
-</table>
-<p></details></p>
-<pre class="r"><code>fit1&lt;- survfit(Surv(tempusmergedupclean$genecount) ~ vitalstatus, data = tempusmergedupclean)
-ggsurvplot(fit1, pval=TRUE)</code></pre>
-<p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-3-6.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of Mutation distribution per patient-3-6.png:</em></summary>
-<table style="border-collapse:separate; border-spacing:5px;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Version
-</th>
-<th style="text-align:left;">
-Author
-</th>
-<th style="text-align:left;">
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-fbe8a8e
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-12
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-7fbf15a
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-10
-</td>
-</tr>
-</tbody>
-</table>
-<p></details></p>
-<pre class="r"><code>fit2&lt;- survfit(Surv(log(tempusmergedupclean$maxvariantcount)) ~ vitalstatus, data = tempusmergedupclean)
-ggsurvplot(fit2, pval=TRUE)</code></pre>
-<p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-3-7.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of Mutation distribution per patient-3-7.png:</em></summary>
-<table style="border-collapse:separate; border-spacing:5px;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Version
-</th>
-<th style="text-align:left;">
-Author
-</th>
-<th style="text-align:left;">
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-fbe8a8e
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-12
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-7fbf15a
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-10
-</td>
-</tr>
-</tbody>
-</table>
-<p></details></p>
-<pre class="r"><code>fit3&lt;- survfit(Surv(tempusmergedupclean$TMB) ~ vitalstatus, data = tempusmergedupclean)
-ggsurvplot(fit3, pval=TRUE)</code></pre>
-<p><img src="figure/Tempus.Rmd/Mutation%20distribution%20per%20patient-3-8.png" width="672" style="display: block; margin: auto;" /></p>
-<details> <summary><em>Expand here to see past versions of Mutation distribution per patient-3-8.png:</em></summary>
-<table style="border-collapse:separate; border-spacing:5px;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Version
-</th>
-<th style="text-align:left;">
-Author
-</th>
-<th style="text-align:left;">
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-fbe8a8e
-</td>
-<td style="text-align:left;">
-Sheila Rajagopal
-</td>
-<td style="text-align:left;">
-2019-02-12
-</td>
-</tr>
-</tbody>
-</table>
-<p></details></p>
-<pre class="r"><code>mylogit &lt;- glm(tempusmergedupclean$recurrenceposneg ~ tempusmergedupclean$genecount + +tempusmergedupclean$subtype + tempusmergedupclean$age50 + tempusmergedupclean$race +tempusmergedupclean$stage14, data = tempusmergedupclean, family = &quot;binomial&quot;)
-summary(mylogit)</code></pre>
-<pre><code>
-Call:
-glm(formula = tempusmergedupclean$recurrenceposneg ~ tempusmergedupclean$genecount + 
-    +tempusmergedupclean$subtype + tempusmergedupclean$age50 + 
-    tempusmergedupclean$race + tempusmergedupclean$stage14, family = &quot;binomial&quot;, 
-    data = tempusmergedupclean)
-
-Deviance Residuals: 
-    Min       1Q   Median       3Q      Max  
--1.3937  -0.8758  -0.6649   1.1017   2.0726  
-
-Coefficients:
-                                      Estimate Std. Error z value Pr(&gt;|z|)
-(Intercept)                          -15.06964 1455.39797  -0.010    0.992
-tempusmergedupclean$genecount         -0.01568    0.01054  -1.487    0.137
-tempusmergedupclean$subtypeHER+/HR-   -0.96830    0.87338  -1.109    0.268
-tempusmergedupclean$subtypeHER+/HR+   -0.89922    0.60476  -1.487    0.137
-tempusmergedupclean$subtypeTNBC        0.02569    0.49860   0.052    0.959
-tempusmergedupclean$age50              0.26406    0.43592   0.606    0.545
-tempusmergedupclean$raceBlack         13.99316 1455.39771   0.010    0.992
-tempusmergedupclean$raceWhite         13.61720 1455.39772   0.009    0.993
-tempusmergedupclean$stage14            0.46914    0.30355   1.545    0.122
-
-(Dispersion parameter for binomial family taken to be 1)
-
-    Null deviance: 145.93  on 114  degrees of freedom
-Residual deviance: 132.25  on 106  degrees of freedom
-  (12 observations deleted due to missingness)
-AIC: 150.25
-
-Number of Fisher Scoring iterations: 14</code></pre>
-<pre class="r"><code>mylogit &lt;- glm(tempusmergedupclean$recurrenceposneg ~ tempusmergedupclean$TMB + +tempusmergedupclean$subtype + tempusmergedupclean$age50 + tempusmergedupclean$race +tempusmergedupclean$stage14, data = tempusmergedupclean, family = &quot;binomial&quot;)
-summary(mylogit)</code></pre>
-<pre><code>
-Call:
-glm(formula = tempusmergedupclean$recurrenceposneg ~ tempusmergedupclean$TMB + 
-    +tempusmergedupclean$subtype + tempusmergedupclean$age50 + 
-    tempusmergedupclean$race + tempusmergedupclean$stage14, family = &quot;binomial&quot;, 
-    data = tempusmergedupclean)
-
-Deviance Residuals: 
-    Min       1Q   Median       3Q      Max  
--1.3747  -0.8964  -0.6463   1.1281   2.1818  
-
-Coefficients:
-                                      Estimate Std. Error z value Pr(&gt;|z|)
-(Intercept)                          -15.49381 1455.39789  -0.011    0.992
-tempusmergedupclean$TMB               -0.03359    0.02620  -1.282    0.200
-tempusmergedupclean$subtypeHER+/HR-   -0.96809    0.86911  -1.114    0.265
-tempusmergedupclean$subtypeHER+/HR+   -0.88973    0.60364  -1.474    0.140
-tempusmergedupclean$subtypeTNBC        0.07328    0.49484   0.148    0.882
-tempusmergedupclean$age50              0.26805    0.43440   0.617    0.537
-tempusmergedupclean$raceBlack         14.24868 1455.39768   0.010    0.992
-tempusmergedupclean$raceWhite         13.91134 1455.39769   0.010    0.992
-tempusmergedupclean$stage14            0.48465    0.30347   1.597    0.110
-
-(Dispersion parameter for binomial family taken to be 1)
-
-    Null deviance: 145.93  on 114  degrees of freedom
-Residual deviance: 133.12  on 106  degrees of freedom
-  (12 observations deleted due to missingness)
-AIC: 151.12
-
-Number of Fisher Scoring iterations: 14</code></pre>
-<pre class="r"><code>mylogit &lt;- glm(tempusmergedupclean$recurrenceposneg ~ tempusmergedupclean$maxvariantcount + +tempusmergedupclean$subtype + tempusmergedupclean$age50 + tempusmergedupclean$race +tempusmergedupclean$stage14, data = tempusmergedupclean, family = &quot;binomial&quot;)
-summary(mylogit)</code></pre>
-<pre><code>
-Call:
-glm(formula = tempusmergedupclean$recurrenceposneg ~ tempusmergedupclean$maxvariantcount + 
-    +tempusmergedupclean$subtype + tempusmergedupclean$age50 + 
-    tempusmergedupclean$race + tempusmergedupclean$stage14, family = &quot;binomial&quot;, 
-    data = tempusmergedupclean)
-
-Deviance Residuals: 
-    Min       1Q   Median       3Q      Max  
--1.4050  -0.9009  -0.6605   1.1825   2.0525  
-
-Coefficients:
-                                      Estimate Std. Error z value Pr(&gt;|z|)
-(Intercept)                          -15.44029 1455.39791  -0.011    0.992
-tempusmergedupclean$maxvariantcount   -0.25706    0.20141  -1.276    0.202
-tempusmergedupclean$subtypeHER+/HR-   -0.92166    0.86749  -1.062    0.288
-tempusmergedupclean$subtypeHER+/HR+   -0.82229    0.60229  -1.365    0.172
-tempusmergedupclean$subtypeTNBC        0.07856    0.49497   0.159    0.874
-tempusmergedupclean$age50              0.22407    0.43263   0.518    0.605
-tempusmergedupclean$raceBlack         14.43553 1455.39767   0.010    0.992
-tempusmergedupclean$raceWhite         14.04969 1455.39767   0.010    0.992
-tempusmergedupclean$stage14            0.49328    0.30423   1.621    0.105
-
-(Dispersion parameter for binomial family taken to be 1)
-
-    Null deviance: 145.93  on 114  degrees of freedom
-Residual deviance: 133.53  on 106  degrees of freedom
-  (12 observations deleted due to missingness)
-AIC: 151.53
-
-Number of Fisher Scoring iterations: 14</code></pre>
-<p>We saw significant associations between recurrence and gene count, variant count and TMB in univariate analyses. With a logistic regression stratifying for age, race, subtype and stage, these did not maintain significance, but this may be due to the smaller sample size as genecount and TMB did not correlate closely with stage and would not expected to be completely substituted for by this variable in this data set.</p>
 </div>
 <div id="extremely-mutated-patients-x-2---case-examples" class="section level1">
 <h1>Extremely mutated patients x 2 - case examples</h1>
