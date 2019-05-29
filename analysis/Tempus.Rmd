@@ -1,5 +1,5 @@
 ---
-title: "Tempus Data Analysis 5/28/2019"
+title: "Tempus Data Analysis 5/29/2019"
 site: workflowr::wflow_site
 output:
   workflowr::wflow_html:
@@ -18,6 +18,7 @@ library(ggplot2)
 library(survival)
 library(survminer)
 library(stringr)
+library(ComplexHeatmap)
 
 knitr::opts_chunk$set
 knitr::kable
@@ -94,8 +95,9 @@ tempusmerge$recurrenceposneg <- ifelse (tempusmerge$type1strecurrence=="00 Patie
 tempusmerge$recurrenceposneg <- ifelse (tempusmerge$type1strecurrence=="99 It is unknown whether the disease has recurred or if the patient was ever disease-free", NA, tempusmerge$recurrenceposneg) #Cleaning unknown recurrence variables from this
 tempusmerge$recurrenceposneg <- ifelse (tempusmerge$type1strecurrence=="70 Since diagnosis, patient has never been disease-free. This includes cases with distant metastasis at diagnosis, systemic disease, unknown primary, or minimal disease that is not treated", NA, tempusmerge$recurrenceposneg) #Cleaning unknown recurrence variables from this
 
-tempusmerge$pfs <- tempusmerge$recurrenceposneg
-tempusmerge$pfs <- ifelse (tempusmerge$vitalstatussurv==1, 1, tempusmerge$pfs)
+tempusmerge$pfs <- tempusmerge$vitalstatussurv
+tempusmerge$pfs <- ifelse (tempusmerge$recurrenceposneg==1, 1, tempusmerge$pfs)
+tempusmerge$pfs <- ifelse (is.na(tempusmerge$recurrenceposneg) & tempusmerge$vitalstatussurv==1, 1, tempusmerge$pfs)
 
 tempusmerge$TMB <- tempusmerge$TumorMutationalBurden
 tempusmerge$TMB <- str_replace(tempusmerge$TMB, pattern = " m/MB", replacement = "")
@@ -105,7 +107,7 @@ tempusmerge$timefu <- ((as.Date(as.character(tempusmerge$date_FU), format="%m/%d
 
 tempusmerge$pfstimefu <- tempusmerge$timefu
 
-tempusmerge$pfstimefu <- ifelse (tempusmerge$recurrenceposneg==1, ((as.Date(as.character(tempusmerge$dateRec), format="%m/%d/%y"))-(as.Date(as.character(tempusmerge$datedx), format="%m/%d/%y")))/365.25, tempusmerge$pfstimefu)
+tempusmerge$pfstimefu <- ifelse (tempusmerge$pfs==1 & tempusmerge$recurrenceposneg==1, ((as.Date(as.character(tempusmerge$dateRec), format="%m/%d/%y"))-(as.Date(as.character(tempusmerge$datedx), format="%m/%d/%y")))/365.25, tempusmerge$pfstimefu)
 #duration of follow up for survival curves in years -> timefu is overall followup time and pfstimefu is followup time for progression free survival
 
 tempusmergedupclean <- tempusmerge
@@ -172,6 +174,8 @@ We have representation of `r length(unique(tempusmutation$Gene))` genes with mut
 
 numGenes <- colSums(!((tempusmergedupclean[,105:663])==""))
 numGenes["ERBB2/HER2"] <- sum(numGenes["ERBB2"], numGenes["ERBB2 (HER2)"], numGenes["ERBB2(HER2)"], numGenes["ERBB2HER2)"])
+numGenes["KMT2A/MLL"] <- sum(numGenes["MLL1"], numGenes["KMT2A(MLL)"], numGenes["KMT2A (MLL)"], numGenes["KMT2A (MLL1)"])
+numGenes["KMT2C/MLL3"] <- sum(numGenes["MLL3"], numGenes["KMT2C(MLL3)"], numGenes["KMT2C (MLL3)"])
 
 head(sort(numGenes,decreasing=TRUE), 30) #Frequency of gene mutations per unique patients 
 
@@ -185,11 +189,11 @@ tempusoncoprint <- tempusmutation
 tempusoncoprint$alteration <- NA
 tempusoncoprint$variant <- NA
 
-tempusoncoprint$variant <- ifelse(tempusoncoprint$typeofvariant=="copy number gain" | tempusoncoprint$typeofvariant=="Copy number gain" | tempusoncoprint$typeofvariant=="Copy Number gain" | tempusoncoprint$typeofvariant=="copy numbre gain" | tempusoncoprint$typeofvariant=="copy number loss" | tempusoncoprint$typeofvariant=="Copy number loss" | tempusoncoprint$typeofvariant=="Copy numberloss" | tempusoncoprint$typeofvariant=="Copy Number Loss", "CNA", tempusoncoprint$variant)
+#tempusoncoprint$variant <- ifelse(tempusoncoprint$typeofvariant=="copy number gain" | tempusoncoprint$typeofvariant=="Copy number gain" | tempusoncoprint$typeofvariant=="Copy Number gain" | tempusoncoprint$typeofvariant=="copy numbre gain" | tempusoncoprint$typeofvariant=="copy number loss" | tempusoncoprint$typeofvariant=="Copy number loss" | tempusoncoprint$typeofvariant=="Copy numberloss" | tempusoncoprint$typeofvariant=="Copy Number Loss", "CNA", tempusoncoprint$variant)
 
-tempusoncoprint$alteration <- ifelse(tempusoncoprint$typeofvariant=="copy number gain" | tempusoncoprint$typeofvariant=="Copy number gain" | tempusoncoprint$typeofvariant=="Copy Number gain" | tempusoncoprint$typeofvariant=="copy numbre gain", "GAIN", tempusoncoprint$alteration)
+tempusoncoprint$variant <- ifelse(tempusoncoprint$typeofvariant=="copy number gain" | tempusoncoprint$typeofvariant=="Copy number gain" | tempusoncoprint$typeofvariant=="Copy Number gain" | tempusoncoprint$typeofvariant=="copy numbre gain", "CNAGAIN", tempusoncoprint$variant)
 
-tempusoncoprint$alteration <- ifelse (tempusoncoprint$typeofvariant=="copy number loss" | tempusoncoprint$typeofvariant=="Copy number loss" | tempusoncoprint$typeofvariant=="Copy numberloss" | tempusoncoprint$typeofvariant=="Copy Number Loss", "HETLOSS", tempusoncoprint$alteration)
+tempusoncoprint$variant <- ifelse (tempusoncoprint$typeofvariant=="copy number loss" | tempusoncoprint$typeofvariant=="Copy number loss" | tempusoncoprint$typeofvariant=="Copy numberloss" | tempusoncoprint$typeofvariant=="Copy Number Loss", "CNALOSS", tempusoncoprint$variant)
 
 tempusoncoprint$variant <- ifelse(tempusoncoprint$typeofvariant=="frameshift" | tempusoncoprint$typeofvariant=="Frameshift" | tempusoncoprint$typeofvariant=="Frameshift - LOF" | tempusoncoprint$typeofvariant=="Frameshift VAF:" | tempusoncoprint$typeofvariant=="Frameshift- LOF" | tempusoncoprint$typeofvariant=="Frameshift- LOF VAF" | tempusoncoprint$typeofvariant=="frameshift-LOF" | tempusoncoprint$typeofvariant=="FrameshiftVAF:" | tempusoncoprint$typeofvariant=="Inframe deletion" | tempusoncoprint$typeofvariant=="Inframe deletion - GOF" | tempusoncoprint$typeofvariant=="inframe insertion" | tempusoncoprint$typeofvariant=="Inframe insertion" | tempusoncoprint$typeofvariant=="Inframe insertion - GOF" | tempusoncoprint$typeofvariant=="rameshift" | tempusoncoprint$typeofvariant=="Frameshift LOF", "INFRAME", tempusoncoprint$variant)
 
@@ -201,89 +205,250 @@ tempusoncoprint$variant <- ifelse(tempusoncoprint$typeofvariant=="Start loss" | 
 
 tempusoncoprint$variant <- ifelse(is.na(tempusoncoprint$variant), "OTHER", tempusoncoprint$variant)
 
-tempusoncoprint$alteration <- ifelse (is.na(tempusoncoprint$alteration), as.character(tempusoncoprint$variant_name_P), tempusoncoprint$alteration)
+#tempusoncoprint$alteration <- ifelse (is.na(tempusoncoprint$alteration), as.character(tempusoncoprint$variant_name_P), tempusoncoprint$alteration)
 
-tempusoncoprint$alteration <- ifelse (tempusoncoprint$alteration=="", "MUT", tempusoncoprint$alteration)
+#tempusoncoprint$alteration <- ifelse (tempusoncoprint$alteration=="", "MUT", tempusoncoprint$alteration)
 
 #tempusoncoprint$varinfo <- paste (tempusoncoprint$variant, tempusoncoprint$alteration, sep=',')
 
 tempusoncoprint$caseID = paste (tempusoncoprint$StudyID, tempusoncoprint$AccessionNo)
 
-tempusoncoprint <- dplyr::select(tempusoncoprint, -c(PanelName, Normalspecimen, Normalcollecteddate, Normalreceiveddate, Tumorspecimen, Tumorcollecteddate, Tumorreceiveddate, TumorPercentage, TumorMutationalBurden, PercentileTumorMutationalBurd, MicrosatelliteInstabilityStatu, DateSigned, biologicalmeaning, variant_name_C, variant_name_P, NM_number, typeofvariant, VAF, COSMICCases, variantcount, Notes, genecount))
+subtype <- tempusmergedupclean %>% select(StudyID, AccessionNo, subtype)
+tempusoncoprint <- merge(tempusoncoprint, subtype, all.x=TRUE)
 
-cbioportaloncoprint <- tempusoncoprint
-cbioportaloncoprint <- cbioportaloncoprint %>% select(AccessionNo, everything())
+germline <- tempusoncoprint %>% filter (VAF > 0.5) %>% select (StudyID, AccessionNo, TumorPercentage, VAF, Gene, variant_name_P) #List of possible germline variants given high allele frequency
+cleanednames <- tempusmergedupclean %>% select(StudyID, AccessionNo)
+germline <- merge(germline, cleanednames)
+germline
 
-cbioportaloncoprint$Gene <- as.character(cbioportaloncoprint$Gene)
-cbioportaloncoprint$Gene <- ifelse (cbioportaloncoprint$Gene=="ERBB2" | cbioportaloncoprint$Gene=="ERBB2 (HER2)" | cbioportaloncoprint$Gene=="ERBB2(HER2)" | cbioportaloncoprint$Gene=="ERBB2HER2)" | cbioportaloncoprint$Gene=="HER2", "ERBB2/HER2", cbioportaloncoprint$Gene)
+tempusoncoprint <- dplyr::select(tempusoncoprint, -c(PanelName, Normalspecimen, Normalcollecteddate, Normalreceiveddate, Tumorspecimen, Tumorcollecteddate, Tumorreceiveddate, TumorPercentage, TumorMutationalBurden, PercentileTumorMutationalBurd, MicrosatelliteInstabilityStatu, DateSigned, biologicalmeaning, variant_name_C, variant_name_P, NM_number, typeofvariant, VAF, COSMICCases, variantcount, Notes, genecount, alteration))
 
-cbioportaloncoprint <- cbioportaloncoprint %>% dplyr::filter(Gene=="TP53" | Gene=="MCL1" | Gene=="PIK3CA" | Gene=="ERBB2/HER2" | Gene=="ZFHX3" | Gene=="ATM" | Gene=="BCORL1" | Gene=="FAT1" | Gene=="KMT2B" | Gene=="KMT2D" | Gene=="NOTCH1" | Gene=="AMER1" | Gene=="CDK12" | Gene=="KDM5C" | Gene=="FLG" | Gene=="MYC" | Gene=="NOTCH3" | Gene=="TSC2" | Gene=="ALK" | Gene=="CUX1" | Gene=="GATA3" | Gene=="HNF1B" | Gene=="SPEN" | Gene=="ARID1A" | Gene=="BCL11B" | Gene=="BCOR" | Gene=="CIC" | Gene=="CDH1" | Gene=="ATRX" | Gene=="BRCA1" | Gene=="BRCA2")
+#cbioportaloncoprint <- tempusoncoprint
+#cbioportaloncoprint <- cbioportaloncoprint %>% select(AccessionNo, everything())
 
-cbioportaloncoprint$X<-NULL
-cbioportaloncoprint$StudyID<-NULL
-cbioportaloncoprint$caseID<-NULL
+#cbioportaloncoprint$Gene <- as.character(cbioportaloncoprint$Gene)
+#cbioportaloncoprint$Gene <- ifelse (cbioportaloncoprint$Gene=="ERBB2" | cbioportaloncoprint$Gene=="ERBB2 (HER2)" | cbioportaloncoprint$Gene=="ERBB2(HER2)" | cbioportaloncoprint$Gene=="ERBB2HER2)" | cbioportaloncoprint$Gene=="HER2", "ERBB2/HER2", cbioportaloncoprint$Gene)
 
-write.table(cbioportaloncoprint, "cbioportaloncoprint.tsv", sep="\t", row.names=FALSE, col.names=FALSE)
+#cbioportaloncoprint <- cbioportaloncoprint %>% dplyr::filter(Gene=="TP53" | Gene=="MCL1" | Gene=="PIK3CA" | Gene=="ERBB2/HER2" | Gene=="ZFHX3" | Gene=="ATM" | Gene=="BCORL1" | Gene=="FAT1" | Gene=="KMT2B" | Gene=="KMT2D" | Gene=="NOTCH1" | Gene=="AMER1" | Gene=="CDK12" | Gene=="KDM5C" | Gene=="FLG" | Gene=="MYC" | Gene=="NOTCH3" | Gene=="TSC2" | Gene=="ALK" | Gene=="CUX1" | Gene=="GATA3" | Gene=="HNF1B" | Gene=="SPEN" | Gene=="ARID1A" | Gene=="BCL11B" | Gene=="BCOR" | Gene=="CIC" | Gene=="CDH1" | Gene=="ATRX" | Gene=="BRCA1" | Gene=="BRCA2")
 
-tempusoncoprint <- tempusoncoprint %>% spread(Gene,variant) #Creates individual columns for each gene with the Gene Information as the value, every variant has its own row
+#cbioportaloncoprint$X<-NULL
+#cbioportaloncoprint$StudyID<-NULL
+#cbioportaloncoprint$caseID<-NULL
+
+#write.table(cbioportaloncoprint, "cbioportaloncoprint.tsv", sep="\t", row.names=FALSE, col.names=FALSE)
+
+tempusoncoprint <- tempusoncoprint %>% spread(Gene,variant)
 
 tempusoncoprint$V1=NULL #Clears artificial columns that were created in the process of formatting the dataset
 tempusoncoprint$X=NULL
 
 tempusoncoprint$`ERBB2/HER2` <- coalesce(tempusoncoprint$ERBB2, tempusoncoprint$`ERBB2 (HER2)`, tempusoncoprint$`ERBB2(HER2)`, tempusoncoprint$`ERBB2HER2)`, tempusoncoprint$HER2)
 
-tempusoncoprint <- tempusoncoprint %>% dplyr::select(caseID, TP53, MCL1, PIK3CA, `ERBB2/HER2`, ZFHX3, ATM, BCORL1, FAT1, KMT2B, KMT2D, NOTCH1, AMER1, CDK12, KDM5C, FLG, MYC, NOTCH3, TSC2, ALK, CUX1, GATA3, HNF1B, SPEN, ARID1A, BCL11B, BCOR, CIC, CDH1, ATRX, BRCA1, BRCA2)
+tempusoncoprint$`KMT2A/MLL` <- coalesce(tempusoncoprint$MLL1, tempusoncoprint$`KMT2A(MLL)`, tempusoncoprint$`KMT2A (MLL)`, tempusoncoprint$`KMT2A (MLL1)`)
 
-tempusoncoprint$StudyID=NULL
-tempusoncoprint$AccessionNo=NULL
+tempusoncoprint$`KMT2C/MLL3` <- coalesce(tempusoncoprint$MLL3, tempusoncoprint$`KMT2C(MLL3)`, tempusoncoprint$`KMT2C (MLL3)`)
 
-mat = as.matrix(tempusoncoprint)
+tempusoncoprint <- tempusoncoprint %>% dplyr::select(caseID, subtype, TP53, MCL1, PIK3CA, `ERBB2/HER2`, ZFHX3, ATM, BCORL1, FAT1, KMT2B, KMT2D, NOTCH1, AMER1, CDK12, KDM5C, FLG, MYC, NOTCH3, TSC2, ALK, CUX1, GATA3, HNF1B, SPEN, ARID1A, BCL11B, BCOR, CIC, CDH1, `KMT2C/MLL3`, ATRX, BRCA1, BRCA2, CDK12, KDM6A, BCR, CHD4, CIC, EGFR, IRS2, JUN, KAT6A, LDLR, MEF2B, MSH6, MUTYH, DNMT3A, ETV6, LRP1B, MSH2, PTEN, TSC2, AR, RARA, MDM2, CTCF)
+
+tempusoncoprintHRposHERneg <- tempusoncoprint %>% filter(subtype=="HER-/HR+")
+tempusoncoprintHRposHERneg$StudyID=NULL
+tempusoncoprintHRposHERneg$AccessionNo=NULL
+tempusoncoprintHRposHERneg$subtype=NULL
+
+mat = as.matrix(tempusoncoprintHRposHERneg)
 mat[is.na(mat)] = ""
 rownames(mat) = mat[, 1]
 mat = mat[, -1]
 mat=  mat[, -ncol(mat)]
 mat = t(mat)
 
-col = c("CNA" = "red", "INFRAME" = "yellow", "MISSENSE" = "green", "PROMOTER" = "blue", "TRUNC" = "black", "OTHER" = "orange")
+col = c("CNAGAIN" = "#009999", "CNALOSS" = "#CC0066", "INFRAME" = "#FF8000", "MISSENSE" = "#0066CC", "PROMOTER" = "#EFD915", "TRUNC" = "black", "OTHER" = "#006600")
 
 alter_fun = list(
-    background = function(x, y, w, h) {
-        grid.rect(x, y, w-unit(0.5, "mm"), h-unit(0.5, "mm"), 
-            gp = gpar(fill = "#CCCCCC", col = NA))
-    },
-    CNA = function(x, y, w, h) {
-        grid.rect(x, y, w-unit(0.5, "mm"), h-unit(0.3, "mm"), 
-            gp = gpar(fill = col["CNA"], col = NA))
-    },
-    INFRAME = function(x, y, w, h) {
-        grid.rect(x, y, w-unit(0.5, "mm"), h-unit(0.3, "mm"), 
-            gp = gpar(fill = col["INFRAME"], col = NA))
-    },
-    MISSENSE = function(x, y, w, h) {
-        grid.rect(x, y, w-unit(0.5, "mm"), h-unit(0.3, "mm"), 
-            gp = gpar(fill = col["MISSENSE"], col = NA))
-    },
-    PROMOTER = function(x, y, w, h) {
-        grid.rect(x, y, w-unit(0.5, "mm"), h-unit(0.3, "mm"), 
-            gp = gpar(fill = col["PROMOTER"], col = NA))
-    },
-    TRUNC = function(x, y, w, h) {
-        grid.rect(x, y, w-unit(0.5, "mm"), h-unit(0.3, "mm"), 
-            gp = gpar(fill = col["TRUNC"], col = NA))
-    },
-    OTHER = function(x, y, w, h) {
-        grid.rect(x, y, w-unit(0.5, "mm"), h-unit(0.3, "mm"), 
+    CNAGAIN = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["CNAGAIN"], col = NA)),
+    CNALOSS = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["CNALOSS"], col = NA)),
+    INFRAME = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["INFRAME"], col = NA)),
+    MISSENSE = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["MISSENSE"], col = NA)),
+    PROMOTER = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["PROMOTER"], col = NA)),
+    TRUNC = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["TRUNC"], col = NA)),
+    OTHER = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
             gp = gpar(fill = col["OTHER"], col = NA))
-    }
 )
 
-column_title = "OncoPrint for University of Chicago samples"
-heatmap_legend_param = list(title = "Alterations", at = c("CNA", "INFRAME", "MISSENSE", "PROMOTER", "TRUNC", "OTHER"), 
-        labels = c("Copy number alteration", "Insertion/Deletion", "Missense", "Splice mutation", "Nonsense", "Mutation-Other"))
-#oncoPrint(mat,
-#    alter_fun = alter_fun, col = col, 
-#    column_title = column_title, heatmap_legend_param = heatmap_legend_param)
+column_title = "OncoPrint for University of Chicago samples: HR+, HER2-"
+heatmap_legend_param = list(title = "Alterations", at = c("CNAGAIN","CNALOSS", "INFRAME", "MISSENSE", "PROMOTER", "TRUNC", "OTHER"), labels = c("Copy number gain", "Copy number loss","Insertion/Deletion", "Missense", "Splice mutation", "Nonsense", "Mutation-Other"))
+oncoPrint(mat,
+    alter_fun = alter_fun,
+    col = col, 
+    column_title = column_title,
+    heatmap_legend_param = heatmap_legend_param,
+    show_pct=FALSE,
+    remove_empty_columns = TRUE,
+    row_names_gp = gpar(fontsize = 10)
+)
 
+tempusoncoprintHRposHERpos <- tempusoncoprint %>% filter(subtype=="HER+/HR+")
+tempusoncoprintHRposHERpos$StudyID=NULL
+tempusoncoprintHRposHERpos$AccessionNo=NULL
+tempusoncoprintHRposHERpos$subtype=NULL
+
+mat = as.matrix(tempusoncoprintHRposHERpos)
+mat[is.na(mat)] = ""
+rownames(mat) = mat[, 1]
+mat = mat[, -1]
+mat=  mat[, -ncol(mat)]
+mat = t(mat)
+
+col = c("CNAGAIN" = "#009999", "CNALOSS" = "#CC0066", "INFRAME" = "#FF8000", "MISSENSE" = "#0066CC", "PROMOTER" = "#EFD915", "TRUNC" = "black", "OTHER" = "#006600")
+
+alter_fun = list(
+    CNAGAIN = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["CNAGAIN"], col = NA)),
+    CNALOSS = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["CNALOSS"], col = NA)),
+    INFRAME = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["INFRAME"], col = NA)),
+    MISSENSE = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["MISSENSE"], col = NA)),
+    PROMOTER = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["PROMOTER"], col = NA)),
+    TRUNC = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["TRUNC"], col = NA)),
+    OTHER = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["OTHER"], col = NA))
+)
+
+column_title = "OncoPrint for University of Chicago samples: HR+, HER2+"
+heatmap_legend_param = list(title = "Alterations", at = c("CNAGAIN","CNALOSS", "INFRAME", "MISSENSE", "PROMOTER", "TRUNC", "OTHER"), labels = c("Copy number gain", "Copy number loss","Insertion/Deletion", "Missense", "Splice mutation", "Nonsense", "Mutation-Other"))
+oncoPrint(mat,
+    alter_fun = alter_fun,
+    col = col, 
+    column_title = column_title,
+    heatmap_legend_param = heatmap_legend_param,
+    show_pct=FALSE,
+    remove_empty_columns = TRUE,
+    row_names_gp = gpar(fontsize = 10)
+)
+
+tempusoncoprintHERpos <- tempusoncoprint %>% filter(subtype=="HER+/HR-")
+tempusoncoprintHERpos$StudyID=NULL
+tempusoncoprintHERpos$AccessionNo=NULL
+tempusoncoprintHERpos$subtype=NULL
+
+mat = as.matrix(tempusoncoprintHERpos)
+mat[is.na(mat)] = ""
+rownames(mat) = mat[, 1]
+mat = mat[, -1]
+mat=  mat[, -ncol(mat)]
+mat = t(mat)
+
+col = c("CNAGAIN" = "#009999", "CNALOSS" = "#CC0066", "INFRAME" = "#FF8000", "MISSENSE" = "#0066CC", "PROMOTER" = "#EFD915", "TRUNC" = "black", "OTHER" = "#006600")
+
+alter_fun = list(
+    CNAGAIN = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["CNAGAIN"], col = NA)),
+    CNALOSS = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["CNALOSS"], col = NA)),
+    INFRAME = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["INFRAME"], col = NA)),
+    MISSENSE = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["MISSENSE"], col = NA)),
+    PROMOTER = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["PROMOTER"], col = NA)),
+    TRUNC = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["TRUNC"], col = NA)),
+    OTHER = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["OTHER"], col = NA))
+)
+
+column_title = "OncoPrint for University of Chicago samples: HR-, HER2+"
+heatmap_legend_param = list(title = "Alterations", at = c("CNAGAIN","CNALOSS", "INFRAME", "MISSENSE", "PROMOTER", "TRUNC", "OTHER"), labels = c("Copy number gain", "Copy number loss","Insertion/Deletion", "Missense", "Splice mutation", "Nonsense", "Mutation-Other"))
+oncoPrint(mat,
+    alter_fun = alter_fun,
+    col = col, 
+    column_title = column_title,
+    heatmap_legend_param = heatmap_legend_param,
+    show_pct=FALSE,
+    remove_empty_columns = TRUE,
+    row_names_gp = gpar(fontsize = 10)
+)
+
+tempusoncoprintTNBC <- tempusoncoprint %>% filter(subtype=="TNBC")
+tempusoncoprintTNBC$StudyID=NULL
+tempusoncoprintTNBC$AccessionNo=NULL
+tempusoncoprintTNBC$subtype=NULL
+
+mat = as.matrix(tempusoncoprintTNBC)
+mat[is.na(mat)] = ""
+rownames(mat) = mat[, 1]
+mat = mat[, -1]
+mat=  mat[, -ncol(mat)]
+mat = t(mat)
+
+col = c("CNAGAIN" = "#009999", "CNALOSS" = "#CC0066", "INFRAME" = "#FF8000", "MISSENSE" = "#0066CC", "PROMOTER" = "#EFD915", "TRUNC" = "black", "OTHER" = "#006600")
+
+alter_fun = list(
+    CNAGAIN = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["CNAGAIN"], col = NA)),
+    CNALOSS = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["CNALOSS"], col = NA)),
+    INFRAME = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["INFRAME"], col = NA)),
+    MISSENSE = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["MISSENSE"], col = NA)),
+    PROMOTER = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["PROMOTER"], col = NA)),
+    TRUNC = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["TRUNC"], col = NA)),
+    OTHER = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col["OTHER"], col = NA))
+)
+
+column_title = "OncoPrint for University of Chicago samples: TNBC"
+heatmap_legend_param = list(title = "Alterations", at = c("CNAGAIN","CNALOSS", "INFRAME", "MISSENSE", "PROMOTER", "TRUNC", "OTHER"), labels = c("Copy number gain", "Copy number loss","Insertion/Deletion", "Missense", "Splice mutation", "Nonsense", "Mutation-Other"))
+oncoPrint(mat,
+    alter_fun = alter_fun,
+    col = col, 
+    column_title = column_title,
+    heatmap_legend_param = heatmap_legend_param,
+    show_pct=FALSE,
+    remove_empty_columns = TRUE,
+    row_names_gp = gpar(fontsize = 10)
+)
 ```
 
 ```{r Ongoing mutational summary, echo=FALSE}
@@ -318,15 +483,19 @@ hist(tempusmergedupclean$immune, main="Immune scores as calculated by Tempus")
 ```
 74 patients had "immune profile" data as calculated by Tempus. This represents a derivation from the RNA-seq data that was developed from a machine learning algorithm, NOT a pathology-based assessment. The immune score is a "support vector regression model for the immune cell estimates and formal thresholds for high or low are not in place as of yet."
 
+Study IDs MB-0910 and MB-1073 represent patients with metastatic disease. Going forward, we will exclude these patients from the cohort to better gauge the effect of our markers under evaluation on survival and recurrence.
+
 #Recurrence and survival by ethnicity in our cohort (significant)
 ```{r Ethnicity recurrence and survival}
+tempusmergedupclean <- tempusmergedupclean %>% filter(stage14!=4)
+  
 fitsurvival <- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$bw, 
                data=tempusmergedupclean)
 ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, title="Survival of patients by ethnicity")
 
 fitrecurrence <- survfit(Surv(time=tempusmergedupclean$pfstimefu, as.numeric(tempusmergedupclean$pfs)) ~tempusmergedupclean$bw, 
                data=tempusmergedupclean)
-ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table="percentage", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, ylab="Recurrence", title="Likelihood of recurrence in patients by ethnicity")
+ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, ylab="Recurrence", title="Progression-free survival in patients by ethnicity")
 ```
 
 #Mutations among different subgroups - Subtype and race (TP53 significant in general)
@@ -334,25 +503,25 @@ ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table="percentage", pva
 subtypeHERposHRneg <- tempusmergedupclean %>% filter(subtype=="HER+/HR-")
 allgenesHERposHRneg <- colSums(!((subtypeHERposHRneg[,105:663])==""))
 allgenesHERposHRneg["ERBB2/HER2"] <- sum(allgenesHERposHRneg["ERBB2"], allgenesHERposHRneg["ERBB2 (HER2)"], allgenesHERposHRneg["ERBB2(HER2)"], allgenesHERposHRneg["ERBB2HER2)"], allgenesHERposHRneg["HER2"])
-headHERposHRneg <- head(sort(allgenesHERposHRneg, decreasing=TRUE), 10)
+headHERposHRneg <- head(sort(allgenesHERposHRneg, decreasing=TRUE), 20)
 headHERposHRneg
 
 subtypeHERnegHRpos <- tempusmergedupclean %>% filter(subtype=="HER-/HR+")
 allgenesHERnegHRpos <- colSums(!((subtypeHERnegHRpos[,105:663])==""))
 allgenesHERnegHRpos["ERBB2/HER2"] <- sum(allgenesHERnegHRpos["ERBB2"], allgenesHERnegHRpos["ERBB2 (HER2)"], allgenesHERnegHRpos["ERBB2(HER2)"], allgenesHERnegHRpos["ERBB2HER2)"], allgenesHERnegHRpos["HER2"])
-headHERnegHRpos <- head(sort(allgenesHERnegHRpos, decreasing=TRUE), 10)
+headHERnegHRpos <- head(sort(allgenesHERnegHRpos, decreasing=TRUE), 20)
 headHERnegHRpos
 
 subtypeTNBC <- tempusmergedupclean %>% filter(subtype=="TNBC")
 allgenesTNBC <- colSums(!((subtypeTNBC[,105:663])==""))
 allgenesTNBC["ERBB2/HER2"] <- sum(allgenesTNBC["ERBB2"], allgenesTNBC["ERBB2 (HER2)"], allgenesTNBC["ERBB2(HER2)"], allgenesTNBC["ERBB2HER2)"], allgenesTNBC["HER2"])
-headTNBC<- head(sort(allgenesTNBC, decreasing=TRUE), 10)
+headTNBC<- head(sort(allgenesTNBC, decreasing=TRUE), 20)
 headTNBC
 
 subtypeHERposHRpos <- tempusmergedupclean %>% filter(subtype=="HER+/HR+")
 allgenesHERposHRpos <- colSums(!((subtypeHERposHRpos[,105:663])==""))
 allgenesHERposHRpos["ERBB2/HER2"] <- sum(allgenesHERposHRpos["ERBB2"], allgenesHERposHRpos["ERBB2 (HER2)"], allgenesHERposHRpos["ERBB2(HER2)"], allgenesHERposHRpos["ERBB2HER2)"], allgenesHERposHRpos["HER2"])
-headHERposHRpos <- head(sort(allgenesHERposHRpos, decreasing=TRUE), 10)
+headHERposHRpos <- head(sort(allgenesHERposHRpos, decreasing=TRUE), 20)
 headHERposHRpos
 
 chisq.test(headHERnegHRpos, headHERposHRneg, headTNBC, headHERposHRpos)
@@ -394,6 +563,7 @@ fitrecurrence <- survfit(Surv(time=tempusmergedupclean$pfstimefu, as.numeric(tem
                data=tempusmergedupclean)
 ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, ylab="Recurrence", title="Likelihood of recurrence in patients by BRCA mutation status")
 
+#AR receptor status
 tempusmergedupclean$ARYN <- ifelse (tempusmergedupclean$AR=="", 0, 1)
 
 fitsurvival <- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$ARYN, 
@@ -404,6 +574,7 @@ fitrecurrence <- survfit(Surv(time=tempusmergedupclean$pfstimefu, as.numeric(tem
                data=tempusmergedupclean)
 ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, ylab="Recurrence", title="Likelihood of recurrence in patients by AR mutation status")
 
+#PIK3CA mutation status
 tempusmergedupclean$PIK3CAYN <- ifelse (tempusmergedupclean$PIK3CA=="", 0, 1)
 
 fitsurvival <- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$PIK3CAYN, 
@@ -414,6 +585,7 @@ fitrecurrence <- survfit(Surv(time=tempusmergedupclean$pfstimefu, as.numeric(tem
                data=tempusmergedupclean)
 ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, ylab="Recurrence", title="Likelihood of recurrence in patients by PIK3CA mutation status")
 
+#ATM mutation status
 tempusmergedupclean$ATMYN <- ifelse (tempusmergedupclean$ATM=="", 0, 1)
 
 fitsurvival <- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$ATMYN, 
@@ -429,15 +601,15 @@ ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table="absolute", pval=
 ```{r Immune profile recurrence and survival}
 chisq.test (tempusmergedupclean$neoadj, tempusmergedupclean$TMB)
 
-tempusmergedupclean$TMBhighlow <- ifelse(tempusmergedupclean$TMB>20, 1, 0)
+tempusmergedupclean$TMBhighlow <- ifelse(tempusmergedupclean$TMB>9, 1, 0)
   
 fitsurvival <- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$TMBhighlow, 
                data=tempusmergedupclean)
-ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, title="Survival of patients by TMB mutation status (high>20 m/MB)")
+ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, title="Survival of patients by TMB mutation status (high>9 m/MB)")
 
 fitrecurrence <- survfit(Surv(time=tempusmergedupclean$pfstimefu, as.numeric(tempusmergedupclean$pfs)) ~tempusmergedupclean$TMBhighlow, 
                data=tempusmergedupclean)
-ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, ylab="Recurrence", title="Likelihood of recurrence in patients by TMB (high>20 m/mB)")
+ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, ylab="Recurrence", title="Progression-free survival in patients by TMB (high>9 m/mB)")
 
 tempusmergedupclean$TMBquartile <- tempusmergedupclean$TMB
 tempusmergedupclean$TMBquartile <- ifelse(tempusmergedupclean$TMBquartile<1.3, 1, tempusmergedupclean$TMBquartile)
@@ -453,6 +625,7 @@ fitrecurrence <- survfit(Surv(time=tempusmergedupclean$pfstimefu, as.numeric(tem
                data=tempusmergedupclean)
 ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, ylab="Recurrence", title="Likelihood of recurrence in patients by TMB quartile")
 
+chisq.test(tempusmergedupclean$stage14, tempusmergedupclean$TMBhighlow)
 
 tempusmergedupclean$immunemedian <- ifelse(tempusmergedupclean$immune>0.12, 1, 0)
 
@@ -483,7 +656,6 @@ ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table="absolute", pval=TR
 fitrecurrence <- survfit(Surv(time=tempusmergedupclean$pfstimefu, as.numeric(tempusmergedupclean$pfs)) ~tempusmergedupclean$cd4median, 
                data=tempusmergedupclean)
 ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, ylab="Recurrence", title="Likelihood of recurrence in patients by % cd4 cell infiltrate greater or less than the median")
-
 
 tempusmergedupclean$cd8median <- ifelse(tempusmergedupclean$cd8>0.13, 1, 0)
 
@@ -522,7 +694,6 @@ fit.coxph <- coxph(surv_object ~ tempusmergedupclean$TMBhighlow + tempusmergedup
                    
 ggforest(fit.coxph, data = tempusmergedupclean, main="Comparative hazard ratios of immune measurements in patient tumors")
 
-
 rec_object <- Surv(time=tempusmergedupclean$pfstimefu, event=as.numeric(tempusmergedupclean$pfs))
      
 fit.coxph2 <- coxph(rec_object ~ tempusmergedupclean$TMBhighlow + tempusmergedupclean$immunemedian + tempusmergedupclean$bmedian + tempusmergedupclean$cd4median + tempusmergedupclean$cd8median + tempusmergedupclean$macmedian + tempusmergedupclean$nkmedian,
@@ -536,31 +707,37 @@ Neoadjuvant chemotherapy treatment status was not associated with a change in tu
 ```{r CDK pathway status}
 tempusmergedupclean$CDKpathYN <- ifelse (tempusmergedupclean$CDK4=="" & tempusmergedupclean$CCND1=="" & tempusmergedupclean$CDKN2A=="" & tempusmergedupclean$CDK6=="" & tempusmergedupclean$RB1=="" & tempusmergedupclean$FAT1=="", 0, 1)
 
-fitsurvival <- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$CDKpathYN+tempusmergedupclean$subtype, 
+subtypeHERnegHRpos$CDKsens <- ifelse(grepl("gain", as.character(subtypeHERnegHRpos$CDK4[1:51])), 1, 0)
+subtypeHERnegHRpos$CDKsens <- ifelse(grepl("gain", as.character(subtypeHERnegHRpos$CCND1[1:51])), 1, subtypeHERnegHRpos$CDKsens)
+subtypeHERnegHRpos$CDKsens <- ifelse(grepl("loss", as.character(subtypeHERnegHRpos$CDKN2A[1:51])), 1, subtypeHERnegHRpos$CDKsens)
+
+subtypeHERnegHRpos$CDKres <- ifelse(grepl("loss", as.character(subtypeHERnegHRpos$RB1[1:51])), 1, 0)
+subtypeHERnegHRpos$CDKres <- ifelse(grepl("gain", as.character(subtypeHERnegHRpos$CDK6[1:51])), 1, subtypeHERnegHRpos$CDKres)
+subtypeHERnegHRpos$CDKres <- ifelse(grepl("gain", as.character(subtypeHERnegHRpos$FAT1[1:51])), 1, subtypeHERnegHRpos$CDKres)
+
+fitsurvival <- survfit(Surv(time=subtypeHERnegHRpos$timefu, as.numeric(subtypeHERnegHRpos$vitalstatussurv)) ~subtypeHERnegHRpos$CDKsens, 
+               data=subtypeHERnegHRpos)
+ggsurvplot(fitsurvival, data=subtypeHERnegHRpos, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, title="Survival of HR+, HER2- patients by CDK mutation sensitivity")
+
+fitrecurrence <- survfit(Surv(time=subtypeHERnegHRpos$pfstimefu, as.numeric(subtypeHERnegHRpos$pfs)) ~subtypeHERnegHRpos$CDKsens,
+               data=subtypeHERnegHRpos)
+ggsurvplot(fitrecurrence, data=subtypeHERnegHRpos, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, ylab="Recurrence", title="Progression-free survival of HR+, HER2- patients by CDK mutation sensitivity")
+
+fitsurvival <- survfit(Surv(time=subtypeHERnegHRpos$timefu, as.numeric(subtypeHERnegHRpos$vitalstatussurv)) ~subtypeHERnegHRpos$CDKres, 
+               data=subtypeHERnegHRpos)
+ggsurvplot(fitsurvival, data=subtypeHERnegHRpos, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, title="Survival of HR+, HER2- patients by CDK mutation resistance")
+
+fitrecurrence <- survfit(Surv(time=subtypeHERnegHRpos$pfstimefu, as.numeric(subtypeHERnegHRpos$pfs)) ~subtypeHERnegHRpos$CDKres,
+               data=subtypeHERnegHRpos)
+ggsurvplot(fitrecurrence, data=subtypeHERnegHRpos, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, ylab="Recurrence", title="Recurrence likelihood of HR+, HER2- patients by CDK mutation sensitivity")
+
+tempusmergedupclean$HRDpathYN <- ifelse (tempusmergedupclean$BRCA1=="" & tempusmergedupclean$BRCA2=="" & tempusmergedupclean$RAD51C=="" & tempusmergedupclean$RAD51D=="" & tempusmergedupclean$RAD50=="" & tempusmergedupclean$BRIP1=="" & tempusmergedupclean$BARD1=="" & tempusmergedupclean$CHEK2=="" & tempusmergedupclean$MRE11==""  & tempusmergedupclean$PALB2=="" & tempusmergedupclean$MLH1=="" & tempusmergedupclean$MSH2==""  & tempusmergedupclean$MSH6=="" & tempusmergedupclean$PMS2=="", 0, 1)
+
+fitsurvival <- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$HRDpathYN, 
                data=tempusmergedupclean)
-ggsurvplot(fitsurvival, data=tempusmergedupclean, pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, title="Survival of patients by CDK pathway mutation status")
+ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table="absolute", pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, title="Survival of patients by HRD mutation pathway status")
 
-fitrecurrence <- survfit(Surv(time=tempusmergedupclean$pfstimefu, as.numeric(tempusmergedupclean$pfs)) ~tempusmergedupclean$CDKpathYN+tempusmergedupclean$subtype, 
-               data=tempusmergedupclean)
-ggsurvplot(fitrecurrence, data=tempusmergedupclean, pval=TRUE, xlab = "Time in years", xlim=c(0, 10), break.time.by=1, ylab="Recurrence", title="Likelihood of recurrence in patients by CDK pathway mutation status")
 
-table(tempusmergedupclean %>% filter(tempusmergedupclean$CDK4!="") %>% select(subtype))
-
-table(tempusmergedupclean %>% filter(tempusmergedupclean$CCND1!="") %>% select(subtype))
-
-table(tempusmergedupclean %>% filter(tempusmergedupclean$CDKN2A!="") %>% select(subtype))
-
-table(tempusmergedupclean %>% filter(tempusmergedupclean$CDK6!="") %>% select(subtype))
-
-table(tempusmergedupclean %>% filter(tempusmergedupclean$RB1!="") %>% select(subtype))
-
-table(tempusmergedupclean %>% filter(tempusmergedupclean$FAT1!="") %>% select(subtype))
-
-chisq.test(tempusmergedupclean$CDKpathYN, tempusmergedupclean$bw)
-
-chisq.test(tempusmergedupclean$CDKpathYN, tempusmergedupclean$TMB)
-
-chisq.test(tempusmergedupclean$CDKpathYN, tempusmergedupclean$BRCAYN)
 ```
 Mutations in the CDK pathway are associated with survival (significant) and have a trend towards significance in recurrence in patients with TNBC and HER-, HR+ disease. There was no specific association with ethnicity nor an association with mutational burden/BRCA status. 
 

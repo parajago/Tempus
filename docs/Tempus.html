@@ -11,7 +11,7 @@
 
 
 
-<title>Tempus Data Analysis 5/28/2019</title>
+<title>Tempus Data Analysis 5/29/2019</title>
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -410,12 +410,12 @@ div.section {
 
 
 
-<h1 class="title toc-ignore">Tempus Data Analysis 5/28/2019</h1>
+<h1 class="title toc-ignore">Tempus Data Analysis 5/29/2019</h1>
 
 </div>
 
 
-<p><strong>Last updated:</strong> 2019-05-28</p>
+<p><strong>Last updated:</strong> 2019-05-29</p>
 <strong>workflowr checks:</strong> <small>(Click a bullet for more information)</small>
 <ul>
 <li>
@@ -438,7 +438,7 @@ div.section {
 </details>
 </li>
 <li>
-<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> 2ecfa66 </summary></p>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> 885580a </summary></p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
 <pre><code>
 Ignored files:
@@ -451,9 +451,6 @@ Ignored files:
     Ignored:    docs/.DS_Store
     Ignored:    docs/figure/.DS_Store
     Ignored:    output/.DS_Store
-
-Untracked files:
-    Untracked:  cbioportaloncoprint.tsv
 
 Unstaged changes:
     Modified:   analysis/Tempus.Rmd
@@ -485,6 +482,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align:left;">
+Rmd
+</td>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+<td style="text-align:left;">
+5/28
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+html
+</td>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+<td style="text-align:left;">
+5/28
+</td>
+</tr>
 <tr>
 <td style="text-align:left;">
 Rmd
@@ -859,8 +890,9 @@ tempusmerge$recurrenceposneg &lt;- ifelse (tempusmerge$type1strecurrence==&quot;
 tempusmerge$recurrenceposneg &lt;- ifelse (tempusmerge$type1strecurrence==&quot;99 It is unknown whether the disease has recurred or if the patient was ever disease-free&quot;, NA, tempusmerge$recurrenceposneg) #Cleaning unknown recurrence variables from this
 tempusmerge$recurrenceposneg &lt;- ifelse (tempusmerge$type1strecurrence==&quot;70 Since diagnosis, patient has never been disease-free. This includes cases with distant metastasis at diagnosis, systemic disease, unknown primary, or minimal disease that is not treated&quot;, NA, tempusmerge$recurrenceposneg) #Cleaning unknown recurrence variables from this
 
-tempusmerge$pfs &lt;- tempusmerge$recurrenceposneg
-tempusmerge$pfs &lt;- ifelse (tempusmerge$vitalstatussurv==1, 1, tempusmerge$pfs)
+tempusmerge$pfs &lt;- tempusmerge$vitalstatussurv
+tempusmerge$pfs &lt;- ifelse (tempusmerge$recurrenceposneg==1, 1, tempusmerge$pfs)
+tempusmerge$pfs &lt;- ifelse (is.na(tempusmerge$recurrenceposneg) &amp; tempusmerge$vitalstatussurv==1, 1, tempusmerge$pfs)
 
 tempusmerge$TMB &lt;- tempusmerge$TumorMutationalBurden
 tempusmerge$TMB &lt;- str_replace(tempusmerge$TMB, pattern = &quot; m/MB&quot;, replacement = &quot;&quot;)
@@ -870,7 +902,7 @@ tempusmerge$timefu &lt;- ((as.Date(as.character(tempusmerge$date_FU), format=&qu
 
 tempusmerge$pfstimefu &lt;- tempusmerge$timefu
 
-tempusmerge$pfstimefu &lt;- ifelse (tempusmerge$recurrenceposneg==1, ((as.Date(as.character(tempusmerge$dateRec), format=&quot;%m/%d/%y&quot;))-(as.Date(as.character(tempusmerge$datedx), format=&quot;%m/%d/%y&quot;)))/365.25, tempusmerge$pfstimefu)
+tempusmerge$pfstimefu &lt;- ifelse (tempusmerge$pfs==1 &amp; tempusmerge$recurrenceposneg==1, ((as.Date(as.character(tempusmerge$dateRec), format=&quot;%m/%d/%y&quot;))-(as.Date(as.character(tempusmerge$datedx), format=&quot;%m/%d/%y&quot;)))/365.25, tempusmerge$pfstimefu)
 #duration of follow up for survival curves in years -&gt; timefu is overall followup time and pfstimefu is followup time for progression free survival
 
 tempusmergedupclean &lt;- tempusmerge
@@ -1324,8 +1356,8 @@ Sheila Rajagopal
         21         21         20         20         20         19 
        ALK       CUX1      GATA3      HNF1B       SPEN     ARID1A 
         18         18         18         18         18         17 
-    BCL11B       BCOR        CIC       CDH1       ATRX      BRCA1 
-        17         17         17         16         15         15 </code></pre>
+    BCL11B       BCOR        CIC       CDH1 KMT2C/MLL3       ATRX 
+        17         17         17         16         16         15 </code></pre>
 <p><img src="figure/Tempus.Rmd/Mutation%20summary%20and%20tumor%20purity-1.png" width="672" style="display: block; margin: auto;" /></p>
 <details> <summary><em>Expand here to see past versions of Mutation summary and tumor purity-1.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
@@ -1363,11 +1395,11 @@ Sheila Rajagopal
 tempusoncoprint$alteration &lt;- NA
 tempusoncoprint$variant &lt;- NA
 
-tempusoncoprint$variant &lt;- ifelse(tempusoncoprint$typeofvariant==&quot;copy number gain&quot; | tempusoncoprint$typeofvariant==&quot;Copy number gain&quot; | tempusoncoprint$typeofvariant==&quot;Copy Number gain&quot; | tempusoncoprint$typeofvariant==&quot;copy numbre gain&quot; | tempusoncoprint$typeofvariant==&quot;copy number loss&quot; | tempusoncoprint$typeofvariant==&quot;Copy number loss&quot; | tempusoncoprint$typeofvariant==&quot;Copy numberloss&quot; | tempusoncoprint$typeofvariant==&quot;Copy Number Loss&quot;, &quot;CNA&quot;, tempusoncoprint$variant)
+#tempusoncoprint$variant &lt;- ifelse(tempusoncoprint$typeofvariant==&quot;copy number gain&quot; | tempusoncoprint$typeofvariant==&quot;Copy number gain&quot; | tempusoncoprint$typeofvariant==&quot;Copy Number gain&quot; | tempusoncoprint$typeofvariant==&quot;copy numbre gain&quot; | tempusoncoprint$typeofvariant==&quot;copy number loss&quot; | tempusoncoprint$typeofvariant==&quot;Copy number loss&quot; | tempusoncoprint$typeofvariant==&quot;Copy numberloss&quot; | tempusoncoprint$typeofvariant==&quot;Copy Number Loss&quot;, &quot;CNA&quot;, tempusoncoprint$variant)
 
-tempusoncoprint$alteration &lt;- ifelse(tempusoncoprint$typeofvariant==&quot;copy number gain&quot; | tempusoncoprint$typeofvariant==&quot;Copy number gain&quot; | tempusoncoprint$typeofvariant==&quot;Copy Number gain&quot; | tempusoncoprint$typeofvariant==&quot;copy numbre gain&quot;, &quot;GAIN&quot;, tempusoncoprint$alteration)
+tempusoncoprint$variant &lt;- ifelse(tempusoncoprint$typeofvariant==&quot;copy number gain&quot; | tempusoncoprint$typeofvariant==&quot;Copy number gain&quot; | tempusoncoprint$typeofvariant==&quot;Copy Number gain&quot; | tempusoncoprint$typeofvariant==&quot;copy numbre gain&quot;, &quot;CNAGAIN&quot;, tempusoncoprint$variant)
 
-tempusoncoprint$alteration &lt;- ifelse (tempusoncoprint$typeofvariant==&quot;copy number loss&quot; | tempusoncoprint$typeofvariant==&quot;Copy number loss&quot; | tempusoncoprint$typeofvariant==&quot;Copy numberloss&quot; | tempusoncoprint$typeofvariant==&quot;Copy Number Loss&quot;, &quot;HETLOSS&quot;, tempusoncoprint$alteration)
+tempusoncoprint$variant &lt;- ifelse (tempusoncoprint$typeofvariant==&quot;copy number loss&quot; | tempusoncoprint$typeofvariant==&quot;Copy number loss&quot; | tempusoncoprint$typeofvariant==&quot;Copy numberloss&quot; | tempusoncoprint$typeofvariant==&quot;Copy Number Loss&quot;, &quot;CNALOSS&quot;, tempusoncoprint$variant)
 
 tempusoncoprint$variant &lt;- ifelse(tempusoncoprint$typeofvariant==&quot;frameshift&quot; | tempusoncoprint$typeofvariant==&quot;Frameshift&quot; | tempusoncoprint$typeofvariant==&quot;Frameshift - LOF&quot; | tempusoncoprint$typeofvariant==&quot;Frameshift VAF:&quot; | tempusoncoprint$typeofvariant==&quot;Frameshift- LOF&quot; | tempusoncoprint$typeofvariant==&quot;Frameshift- LOF VAF&quot; | tempusoncoprint$typeofvariant==&quot;frameshift-LOF&quot; | tempusoncoprint$typeofvariant==&quot;FrameshiftVAF:&quot; | tempusoncoprint$typeofvariant==&quot;Inframe deletion&quot; | tempusoncoprint$typeofvariant==&quot;Inframe deletion - GOF&quot; | tempusoncoprint$typeofvariant==&quot;inframe insertion&quot; | tempusoncoprint$typeofvariant==&quot;Inframe insertion&quot; | tempusoncoprint$typeofvariant==&quot;Inframe insertion - GOF&quot; | tempusoncoprint$typeofvariant==&quot;rameshift&quot; | tempusoncoprint$typeofvariant==&quot;Frameshift LOF&quot;, &quot;INFRAME&quot;, tempusoncoprint$variant)
 
@@ -1379,88 +1411,255 @@ tempusoncoprint$variant &lt;- ifelse(tempusoncoprint$typeofvariant==&quot;Start 
 
 tempusoncoprint$variant &lt;- ifelse(is.na(tempusoncoprint$variant), &quot;OTHER&quot;, tempusoncoprint$variant)
 
-tempusoncoprint$alteration &lt;- ifelse (is.na(tempusoncoprint$alteration), as.character(tempusoncoprint$variant_name_P), tempusoncoprint$alteration)
+#tempusoncoprint$alteration &lt;- ifelse (is.na(tempusoncoprint$alteration), as.character(tempusoncoprint$variant_name_P), tempusoncoprint$alteration)
 
-tempusoncoprint$alteration &lt;- ifelse (tempusoncoprint$alteration==&quot;&quot;, &quot;MUT&quot;, tempusoncoprint$alteration)
+#tempusoncoprint$alteration &lt;- ifelse (tempusoncoprint$alteration==&quot;&quot;, &quot;MUT&quot;, tempusoncoprint$alteration)
 
 #tempusoncoprint$varinfo &lt;- paste (tempusoncoprint$variant, tempusoncoprint$alteration, sep=&#39;,&#39;)
 
 tempusoncoprint$caseID = paste (tempusoncoprint$StudyID, tempusoncoprint$AccessionNo)
 
-tempusoncoprint &lt;- dplyr::select(tempusoncoprint, -c(PanelName, Normalspecimen, Normalcollecteddate, Normalreceiveddate, Tumorspecimen, Tumorcollecteddate, Tumorreceiveddate, TumorPercentage, TumorMutationalBurden, PercentileTumorMutationalBurd, MicrosatelliteInstabilityStatu, DateSigned, biologicalmeaning, variant_name_C, variant_name_P, NM_number, typeofvariant, VAF, COSMICCases, variantcount, Notes, genecount))
+subtype &lt;- tempusmergedupclean %&gt;% select(StudyID, AccessionNo, subtype)
+tempusoncoprint &lt;- merge(tempusoncoprint, subtype, all.x=TRUE)
 
-cbioportaloncoprint &lt;- tempusoncoprint
-cbioportaloncoprint &lt;- cbioportaloncoprint %&gt;% select(AccessionNo, everything())
+germline &lt;- tempusoncoprint %&gt;% filter (VAF &gt; 0.5) %&gt;% select (StudyID, AccessionNo, TumorPercentage, VAF, Gene, variant_name_P) #List of possible germline variants given high allele frequency
+cleanednames &lt;- tempusmergedupclean %&gt;% select(StudyID, AccessionNo)
+germline &lt;- merge(germline, cleanednames)
+germline</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["StudyID"],"name":[1],"type":["fctr"],"align":["left"]},{"label":["AccessionNo"],"name":[2],"type":["fctr"],"align":["left"]},{"label":["TumorPercentage"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["VAF"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["Gene"],"name":[5],"type":["fctr"],"align":["left"]},{"label":["variant_name_P"],"name":[6],"type":["fctr"],"align":["left"]}],"data":[{"1":"MB-0038","2":"TL-18-A9A9C2","3":"0.70","4":"0.5230","5":"ERBB2 (HER2)","6":"p.L755S"},{"1":"MB-0084","2":"TL-18-25A3C4","3":"0.80","4":"0.6730","5":"TP53","6":"p.G266E"},{"1":"MB-0118","2":"TL-18-F67579","3":"0.70","4":"0.6366","5":"TP53","6":"p.L145P"},{"1":"MB-0118","2":"TL-18-F67579","3":"0.70","4":"0.5564","5":"PTEN","6":"p.W111G"},{"1":"MB-0122","2":"TL-18-C46E0B","3":"0.80","4":"0.6950","5":"ATRX","6":""},{"1":"MB-0144","2":"TL-18-9D428E","3":"0.50","4":"0.5680","5":"TP53","6":""},{"1":"MB-0154","2":"TL-18-93AD89","3":"0.70","4":"0.6284","5":"TP53","6":"p.R248Q"},{"1":"MB-0219","2":"TL-18-DB0F79","3":"0.90","4":"0.7751","5":"TP53","6":"p.R342fs"},{"1":"MB-0219","2":"TL-18-DB0F79","3":"0.90","4":"0.7598","5":"SMC1A","6":"p.A616V"},{"1":"MB-0316","2":"TL-18-560AB2","3":"0.70","4":"0.6331","5":"RAF1","6":"p.R354W"},{"1":"MB-0316","2":"TL-18-560AB2","3":"0.70","4":"0.5795","5":"ATM","6":"p.V716L"},{"1":"MB-0316","2":"TL-18-560AB2","3":"0.70","4":"0.5810","5":"TP53","6":"p.R209fs"},{"1":"MB-0459","2":"TL-18-84DCF0","3":"0.80","4":"0.6816","5":"BRCA1","6":""},{"1":"MB-0593","2":"TL-18-52D9D6","3":"0.70","4":"0.6182","5":"LAG3","6":"p.R210Q"},{"1":"MB-0597","2":"TL-18-1D9668","3":"0.60","4":"0.6260","5":"CDH1","6":"p.N428fs"},{"1":"MB-0650","2":"TL-18-F5769F","3":"0.70","4":"0.6418","5":"FAM175A","6":""},{"1":"MB-0720","2":"TL-18-228825","3":"0.90","4":"0.6060","5":"SMAD2","6":"p.S464*"},{"1":"MB-0720","2":"TL-18-228825","3":"0.90","4":"0.8480","5":"ERBB2 (HER2)","6":"p.A775_G776insYVMA"},{"1":"MB-0739","2":"TL-18-7E6117","3":"0.70","4":"0.5274","5":"BCORL1","6":"p.R1183P"},{"1":"MB-0739","2":"TL-18-7E6117","3":"0.70","4":"0.8610","5":"TP53","6":"p.R248Q"},{"1":"MB-0754","2":"TL-18-426CA0","3":"0.90","4":"0.8083","5":"NCOR1","6":"p.R1794*"},{"1":"MB-1012","2":"TL-18-59A2F3","3":"0.50","4":"0.6197","5":"TP53","6":"p.P278S"},{"1":"MB-1015","2":"TL-18-79C791","3":"0.80","4":"0.5353","5":"TP53","6":"p.R273H"},{"1":"MB-1018","2":"TL-18-DEF0F4","3":"0.80","4":"0.6475","5":"TP53","6":"p.R273H"},{"1":"MB-1027","2":"TL-18-D474FD","3":"0.90","4":"0.6992","5":"MEN1","6":"p.VV161VF"},{"1":"MB-1029","2":"TL-18-CB87F9","3":"0.80","4":"0.5390","5":"PDGFRA","6":"p.N870S"},{"1":"MB-1035","2":"TL-18-96F651","3":"0.80","4":"0.5170","5":"PIK3CA","6":"p.E542K"},{"1":"MB-1047","2":"TL-18-B0A467","3":"0.80","4":"0.7314","5":"TP53","6":"p.T118fs"},{"1":"MB-1047","2":"TL-18-B0A467","3":"0.80","4":"0.6441","5":"NCOR2","6":"p.M1?"},{"1":"MB-1047","2":"TL-18-B0A467","3":"0.80","4":"0.7198","5":"FANCI","6":"p.Q1122E"},{"1":"MB-1051","2":"TL-18-22E048","3":"0.80","4":"0.6500","5":"TP53","6":"p.H193R"},{"1":"MB-1057","2":"TL-18-461934","3":"0.20","4":"0.5906","5":"TP53","6":"p.P250L"},{"1":"MB-1059","2":"TL-18-8635BE","3":"0.70","4":"0.6700","5":"TP53","6":"p.R213*"},{"1":"MB-1064","2":"TL-18-2A1B1D","3":"0.80","4":"0.7386","5":"TP53","6":"p.R342*"},{"1":"MB-1065","2":"TL-18-D808DB","3":"0.80","4":"0.7590","5":"TP53","6":"p.A159P"},{"1":"MB-1068","2":"TL-18-00ED8C","3":"0.60","4":"0.5460","5":"CASP8","6":"p.M163I"},{"1":"MB-1074","2":"TL-18-93D6FB","3":"0.60","4":"0.7620","5":"FLG","6":"p.N132S"},{"1":"MB-1074","2":"TL-18-93D6FB","3":"0.60","4":"0.5740","5":"PIK3CA","6":"p.E545K"},{"1":"MB-1074","2":"TL-18-93D6FB","3":"0.60","4":"0.7300","5":"TP53","6":"p.R342fs"},{"1":"MB-1077","2":"TL-18-F34FAB","3":"0.90","4":"0.9317","5":"TP53","6":"p.G325*"},{"1":"MB-1077","2":"TL-18-F34FAB","3":"0.90","4":"0.6085","5":"LRP1B","6":"p.T1568A"},{"1":"MB-1085","2":"TL-18-A24B2C","3":"0.80","4":"0.5385","5":"RNF43","6":"p.A115V"},{"1":"MB-1087","2":"TL-18-AE3A66","3":"0.80","4":"0.6193","5":"TP53","6":"p.R342P"},{"1":"MB-1087","2":"TL-18-AE3A66","3":"0.80","4":"0.5106","5":"RPTOR","6":""},{"1":"MB-1088","2":"TL-18-D2B8EF","3":"0.60","4":"0.5780","5":"TP53","6":"p.C176Y"},{"1":"PN0129","2":"TL-18-2F1FB7","3":"0.90","4":"0.6090","5":"SMAD4","6":"p.D537G"},{"1":"PN0142","2":"TL-18-97B262","3":"0.20","4":"1.0000","5":"SMAD4","6":"p.R361C"},{"1":"PN0147","2":"TL-18-213530","3":"0.60","4":"0.5430","5":"CHURC1-FNTB","6":"p.G430S"},{"1":"PN0147","2":"TL-18-213530","3":"0.60","4":"0.7540","5":"TP53","6":"p.R175H"},{"1":"PN0165","2":"TL-18-96D26F","3":"0.80","4":"0.7430","5":"KIF1B","6":"p.R1097C"},{"1":"PN0165","2":"TL-18-96D26F","3":"0.80","4":"0.8290","5":"ROS1","6":"p.Y858*"},{"1":"PN0165","2":"TL-18-96D26F","3":"0.80","4":"0.7330","5":"SMARCB1","6":"p.R374Q"},{"1":"PN0165","2":"TL-18-96D26F","3":"0.80","4":"0.7670","5":"NCOR2","6":"p.P687L"},{"1":"PN0176","2":"TL-18-D90285","3":"0.70","4":"0.5680","5":"PLCG2","6":"p.P734L"},{"1":"PN0177","2":"TL-18-DF6845","3":"0.90","4":"0.7500","5":"DAXX","6":"p.G430D"},{"1":"PN0181","2":"TL-18-2F886A","3":"0.60","4":"0.5190","5":"LZTR1","6":""},{"1":"PN0181","2":"TL-18-2F886A","3":"0.60","4":"0.5080","5":"EP300","6":"p.R2185G"},{"1":"PN0181","2":"TL-18-2F886A","3":"0.60","4":"0.5160","5":"TP53","6":"p.R110fs"},{"1":"PN0189","2":"TL-18-725666","3":"0.90","4":"0.5610","5":"PBRM1","6":"p.L1205L"},{"1":"PN0210","2":"TL-18-3E5182","3":"0.80","4":"0.5870","5":"GFRA2","6":"p.A228V"},{"1":"PN0212","2":"TL-18-2C3DA8","3":"0.85","4":"0.8850","5":"ATP7B","6":"p.E396K"},{"1":"PN0212","2":"TL-18-2C3DA8","3":"0.85","4":"0.7950","5":"CDH1","6":"p.V55M"},{"1":"PN0212","2":"TL-18-2C3DA8","3":"0.85","4":"0.8030","5":"HSPH1","6":""},{"1":"PN0212","2":"TL-18-2C3DA8","3":"0.85","4":"0.5270","5":"POLE","6":"p.S38C"},{"1":"PN0213","2":"TL-18-F9EF49","3":"0.95","4":"0.5580","5":"TP53","6":"p.Q136E"},{"1":"PN0216","2":"TL-18-B45919","3":"0.85","4":"0.5500","5":"ZNRF3","6":"p.P487S"},{"1":"PN0226","2":"TL-18-8C551D","3":"0.90","4":"0.7300","5":"TP53","6":"p.R306*"},{"1":"PN0226","2":"TL-18-8C551D","3":"0.90","4":"0.6110","5":"BRCA1","6":"p.S1569fs"},{"1":"PN0226","2":"TL-18-8C551D","3":"0.90","4":"0.8800","5":"ERBB2(HER2)","6":"p.R1048C"},{"1":"PN0228","2":"TL-18-8DCCAE","3":"0.60","4":"0.7940","5":"NCOR1","6":"p.T525fs"},{"1":"PN0244","2":"TL-18-F1A922","3":"0.80","4":"0.7430","5":"TP53","6":"p.R248W"},{"1":"PN0255","2":"TL-18-5E23D5","3":"0.85","4":"0.5190","5":"TCF3","6":"p.P633L"},{"1":"PN0255","2":"TL-18-5E23D5","3":"0.85","4":"0.5280","5":"VHL","6":"p.E199A"},{"1":"PN0255","2":"TL-18-5E23D5","3":"0.85","4":"0.5280","5":"TNFRSF9","6":"p.R134Q"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<pre class="r"><code>tempusoncoprint &lt;- dplyr::select(tempusoncoprint, -c(PanelName, Normalspecimen, Normalcollecteddate, Normalreceiveddate, Tumorspecimen, Tumorcollecteddate, Tumorreceiveddate, TumorPercentage, TumorMutationalBurden, PercentileTumorMutationalBurd, MicrosatelliteInstabilityStatu, DateSigned, biologicalmeaning, variant_name_C, variant_name_P, NM_number, typeofvariant, VAF, COSMICCases, variantcount, Notes, genecount, alteration))
 
-cbioportaloncoprint$Gene &lt;- as.character(cbioportaloncoprint$Gene)
-cbioportaloncoprint$Gene &lt;- ifelse (cbioportaloncoprint$Gene==&quot;ERBB2&quot; | cbioportaloncoprint$Gene==&quot;ERBB2 (HER2)&quot; | cbioportaloncoprint$Gene==&quot;ERBB2(HER2)&quot; | cbioportaloncoprint$Gene==&quot;ERBB2HER2)&quot; | cbioportaloncoprint$Gene==&quot;HER2&quot;, &quot;ERBB2/HER2&quot;, cbioportaloncoprint$Gene)
+#cbioportaloncoprint &lt;- tempusoncoprint
+#cbioportaloncoprint &lt;- cbioportaloncoprint %&gt;% select(AccessionNo, everything())
 
-cbioportaloncoprint &lt;- cbioportaloncoprint %&gt;% dplyr::filter(Gene==&quot;TP53&quot; | Gene==&quot;MCL1&quot; | Gene==&quot;PIK3CA&quot; | Gene==&quot;ERBB2/HER2&quot; | Gene==&quot;ZFHX3&quot; | Gene==&quot;ATM&quot; | Gene==&quot;BCORL1&quot; | Gene==&quot;FAT1&quot; | Gene==&quot;KMT2B&quot; | Gene==&quot;KMT2D&quot; | Gene==&quot;NOTCH1&quot; | Gene==&quot;AMER1&quot; | Gene==&quot;CDK12&quot; | Gene==&quot;KDM5C&quot; | Gene==&quot;FLG&quot; | Gene==&quot;MYC&quot; | Gene==&quot;NOTCH3&quot; | Gene==&quot;TSC2&quot; | Gene==&quot;ALK&quot; | Gene==&quot;CUX1&quot; | Gene==&quot;GATA3&quot; | Gene==&quot;HNF1B&quot; | Gene==&quot;SPEN&quot; | Gene==&quot;ARID1A&quot; | Gene==&quot;BCL11B&quot; | Gene==&quot;BCOR&quot; | Gene==&quot;CIC&quot; | Gene==&quot;CDH1&quot; | Gene==&quot;ATRX&quot; | Gene==&quot;BRCA1&quot; | Gene==&quot;BRCA2&quot;)
+#cbioportaloncoprint$Gene &lt;- as.character(cbioportaloncoprint$Gene)
+#cbioportaloncoprint$Gene &lt;- ifelse (cbioportaloncoprint$Gene==&quot;ERBB2&quot; | cbioportaloncoprint$Gene==&quot;ERBB2 (HER2)&quot; | cbioportaloncoprint$Gene==&quot;ERBB2(HER2)&quot; | cbioportaloncoprint$Gene==&quot;ERBB2HER2)&quot; | cbioportaloncoprint$Gene==&quot;HER2&quot;, &quot;ERBB2/HER2&quot;, cbioportaloncoprint$Gene)
 
-cbioportaloncoprint$X&lt;-NULL
-cbioportaloncoprint$StudyID&lt;-NULL
-cbioportaloncoprint$caseID&lt;-NULL
+#cbioportaloncoprint &lt;- cbioportaloncoprint %&gt;% dplyr::filter(Gene==&quot;TP53&quot; | Gene==&quot;MCL1&quot; | Gene==&quot;PIK3CA&quot; | Gene==&quot;ERBB2/HER2&quot; | Gene==&quot;ZFHX3&quot; | Gene==&quot;ATM&quot; | Gene==&quot;BCORL1&quot; | Gene==&quot;FAT1&quot; | Gene==&quot;KMT2B&quot; | Gene==&quot;KMT2D&quot; | Gene==&quot;NOTCH1&quot; | Gene==&quot;AMER1&quot; | Gene==&quot;CDK12&quot; | Gene==&quot;KDM5C&quot; | Gene==&quot;FLG&quot; | Gene==&quot;MYC&quot; | Gene==&quot;NOTCH3&quot; | Gene==&quot;TSC2&quot; | Gene==&quot;ALK&quot; | Gene==&quot;CUX1&quot; | Gene==&quot;GATA3&quot; | Gene==&quot;HNF1B&quot; | Gene==&quot;SPEN&quot; | Gene==&quot;ARID1A&quot; | Gene==&quot;BCL11B&quot; | Gene==&quot;BCOR&quot; | Gene==&quot;CIC&quot; | Gene==&quot;CDH1&quot; | Gene==&quot;ATRX&quot; | Gene==&quot;BRCA1&quot; | Gene==&quot;BRCA2&quot;)
 
-write.table(cbioportaloncoprint, &quot;cbioportaloncoprint.tsv&quot;, sep=&quot;\t&quot;, row.names=FALSE, col.names=FALSE)
+#cbioportaloncoprint$X&lt;-NULL
+#cbioportaloncoprint$StudyID&lt;-NULL
+#cbioportaloncoprint$caseID&lt;-NULL
 
-tempusoncoprint &lt;- tempusoncoprint %&gt;% spread(Gene,variant) #Creates individual columns for each gene with the Gene Information as the value, every variant has its own row
+#write.table(cbioportaloncoprint, &quot;cbioportaloncoprint.tsv&quot;, sep=&quot;\t&quot;, row.names=FALSE, col.names=FALSE)
+
+tempusoncoprint &lt;- tempusoncoprint %&gt;% spread(Gene,variant)
 
 tempusoncoprint$V1=NULL #Clears artificial columns that were created in the process of formatting the dataset
 tempusoncoprint$X=NULL
 
 tempusoncoprint$`ERBB2/HER2` &lt;- coalesce(tempusoncoprint$ERBB2, tempusoncoprint$`ERBB2 (HER2)`, tempusoncoprint$`ERBB2(HER2)`, tempusoncoprint$`ERBB2HER2)`, tempusoncoprint$HER2)
 
-tempusoncoprint &lt;- tempusoncoprint %&gt;% dplyr::select(caseID, TP53, MCL1, PIK3CA, `ERBB2/HER2`, ZFHX3, ATM, BCORL1, FAT1, KMT2B, KMT2D, NOTCH1, AMER1, CDK12, KDM5C, FLG, MYC, NOTCH3, TSC2, ALK, CUX1, GATA3, HNF1B, SPEN, ARID1A, BCL11B, BCOR, CIC, CDH1, ATRX, BRCA1, BRCA2)</code></pre>
-<pre><code>Adding missing grouping variables: `StudyID`, `AccessionNo`</code></pre>
-<pre class="r"><code>tempusoncoprint$StudyID=NULL
-tempusoncoprint$AccessionNo=NULL
+tempusoncoprint$`KMT2A/MLL` &lt;- coalesce(tempusoncoprint$MLL1, tempusoncoprint$`KMT2A(MLL)`, tempusoncoprint$`KMT2A (MLL)`, tempusoncoprint$`KMT2A (MLL1)`)
 
-mat = as.matrix(tempusoncoprint)
+tempusoncoprint$`KMT2C/MLL3` &lt;- coalesce(tempusoncoprint$MLL3, tempusoncoprint$`KMT2C(MLL3)`, tempusoncoprint$`KMT2C (MLL3)`)
+
+tempusoncoprint &lt;- tempusoncoprint %&gt;% dplyr::select(caseID, subtype, TP53, MCL1, PIK3CA, `ERBB2/HER2`, ZFHX3, ATM, BCORL1, FAT1, KMT2B, KMT2D, NOTCH1, AMER1, CDK12, KDM5C, FLG, MYC, NOTCH3, TSC2, ALK, CUX1, GATA3, HNF1B, SPEN, ARID1A, BCL11B, BCOR, CIC, CDH1, `KMT2C/MLL3`, ATRX, BRCA1, BRCA2, CDK12, KDM6A, BCR, CHD4, CIC, EGFR, IRS2, JUN, KAT6A, LDLR, MEF2B, MSH6, MUTYH, DNMT3A, ETV6, LRP1B, MSH2, PTEN, TSC2, AR, RARA, MDM2, CTCF)
+
+tempusoncoprintHRposHERneg &lt;- tempusoncoprint %&gt;% filter(subtype==&quot;HER-/HR+&quot;)
+tempusoncoprintHRposHERneg$StudyID=NULL
+tempusoncoprintHRposHERneg$AccessionNo=NULL
+tempusoncoprintHRposHERneg$subtype=NULL
+
+mat = as.matrix(tempusoncoprintHRposHERneg)
 mat[is.na(mat)] = &quot;&quot;
 rownames(mat) = mat[, 1]
 mat = mat[, -1]
 mat=  mat[, -ncol(mat)]
 mat = t(mat)
 
-col = c(&quot;CNA&quot; = &quot;red&quot;, &quot;INFRAME&quot; = &quot;yellow&quot;, &quot;MISSENSE&quot; = &quot;green&quot;, &quot;PROMOTER&quot; = &quot;blue&quot;, &quot;TRUNC&quot; = &quot;black&quot;, &quot;OTHER&quot; = &quot;orange&quot;)
+col = c(&quot;CNAGAIN&quot; = &quot;#009999&quot;, &quot;CNALOSS&quot; = &quot;#CC0066&quot;, &quot;INFRAME&quot; = &quot;#FF8000&quot;, &quot;MISSENSE&quot; = &quot;#0066CC&quot;, &quot;PROMOTER&quot; = &quot;#EFD915&quot;, &quot;TRUNC&quot; = &quot;black&quot;, &quot;OTHER&quot; = &quot;#006600&quot;)
 
 alter_fun = list(
-    background = function(x, y, w, h) {
-        grid.rect(x, y, w-unit(0.5, &quot;mm&quot;), h-unit(0.5, &quot;mm&quot;), 
-            gp = gpar(fill = &quot;#CCCCCC&quot;, col = NA))
-    },
-    CNA = function(x, y, w, h) {
-        grid.rect(x, y, w-unit(0.5, &quot;mm&quot;), h-unit(0.3, &quot;mm&quot;), 
-            gp = gpar(fill = col[&quot;CNA&quot;], col = NA))
-    },
-    INFRAME = function(x, y, w, h) {
-        grid.rect(x, y, w-unit(0.5, &quot;mm&quot;), h-unit(0.3, &quot;mm&quot;), 
-            gp = gpar(fill = col[&quot;INFRAME&quot;], col = NA))
-    },
-    MISSENSE = function(x, y, w, h) {
-        grid.rect(x, y, w-unit(0.5, &quot;mm&quot;), h-unit(0.3, &quot;mm&quot;), 
-            gp = gpar(fill = col[&quot;MISSENSE&quot;], col = NA))
-    },
-    PROMOTER = function(x, y, w, h) {
-        grid.rect(x, y, w-unit(0.5, &quot;mm&quot;), h-unit(0.3, &quot;mm&quot;), 
-            gp = gpar(fill = col[&quot;PROMOTER&quot;], col = NA))
-    },
-    TRUNC = function(x, y, w, h) {
-        grid.rect(x, y, w-unit(0.5, &quot;mm&quot;), h-unit(0.3, &quot;mm&quot;), 
-            gp = gpar(fill = col[&quot;TRUNC&quot;], col = NA))
-    },
-    OTHER = function(x, y, w, h) {
-        grid.rect(x, y, w-unit(0.5, &quot;mm&quot;), h-unit(0.3, &quot;mm&quot;), 
+    CNAGAIN = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;CNAGAIN&quot;], col = NA)),
+    CNALOSS = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;CNALOSS&quot;], col = NA)),
+    INFRAME = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;INFRAME&quot;], col = NA)),
+    MISSENSE = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;MISSENSE&quot;], col = NA)),
+    PROMOTER = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;PROMOTER&quot;], col = NA)),
+    TRUNC = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;TRUNC&quot;], col = NA)),
+    OTHER = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
             gp = gpar(fill = col[&quot;OTHER&quot;], col = NA))
-    }
 )
 
-column_title = &quot;OncoPrint for University of Chicago samples&quot;
-heatmap_legend_param = list(title = &quot;Alterations&quot;, at = c(&quot;CNA&quot;, &quot;INFRAME&quot;, &quot;MISSENSE&quot;, &quot;PROMOTER&quot;, &quot;TRUNC&quot;, &quot;OTHER&quot;), 
-        labels = c(&quot;Copy number alteration&quot;, &quot;Insertion/Deletion&quot;, &quot;Missense&quot;, &quot;Splice mutation&quot;, &quot;Nonsense&quot;, &quot;Mutation-Other&quot;))
-#oncoPrint(mat,
-#    alter_fun = alter_fun, col = col, 
-#    column_title = column_title, heatmap_legend_param = heatmap_legend_param)</code></pre>
+column_title = &quot;OncoPrint for University of Chicago samples: HR+, HER2-&quot;
+heatmap_legend_param = list(title = &quot;Alterations&quot;, at = c(&quot;CNAGAIN&quot;,&quot;CNALOSS&quot;, &quot;INFRAME&quot;, &quot;MISSENSE&quot;, &quot;PROMOTER&quot;, &quot;TRUNC&quot;, &quot;OTHER&quot;), labels = c(&quot;Copy number gain&quot;, &quot;Copy number loss&quot;,&quot;Insertion/Deletion&quot;, &quot;Missense&quot;, &quot;Splice mutation&quot;, &quot;Nonsense&quot;, &quot;Mutation-Other&quot;))
+oncoPrint(mat,
+    alter_fun = alter_fun,
+    col = col, 
+    column_title = column_title,
+    heatmap_legend_param = heatmap_legend_param,
+    show_pct=FALSE,
+    remove_empty_columns = TRUE,
+    row_names_gp = gpar(fontsize = 10)
+)</code></pre>
+<p><img src="figure/Tempus.Rmd/Oncoprint-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>tempusoncoprintHRposHERpos &lt;- tempusoncoprint %&gt;% filter(subtype==&quot;HER+/HR+&quot;)
+tempusoncoprintHRposHERpos$StudyID=NULL
+tempusoncoprintHRposHERpos$AccessionNo=NULL
+tempusoncoprintHRposHERpos$subtype=NULL
+
+mat = as.matrix(tempusoncoprintHRposHERpos)
+mat[is.na(mat)] = &quot;&quot;
+rownames(mat) = mat[, 1]
+mat = mat[, -1]
+mat=  mat[, -ncol(mat)]
+mat = t(mat)
+
+col = c(&quot;CNAGAIN&quot; = &quot;#009999&quot;, &quot;CNALOSS&quot; = &quot;#CC0066&quot;, &quot;INFRAME&quot; = &quot;#FF8000&quot;, &quot;MISSENSE&quot; = &quot;#0066CC&quot;, &quot;PROMOTER&quot; = &quot;#EFD915&quot;, &quot;TRUNC&quot; = &quot;black&quot;, &quot;OTHER&quot; = &quot;#006600&quot;)
+
+alter_fun = list(
+    CNAGAIN = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;CNAGAIN&quot;], col = NA)),
+    CNALOSS = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;CNALOSS&quot;], col = NA)),
+    INFRAME = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;INFRAME&quot;], col = NA)),
+    MISSENSE = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;MISSENSE&quot;], col = NA)),
+    PROMOTER = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;PROMOTER&quot;], col = NA)),
+    TRUNC = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;TRUNC&quot;], col = NA)),
+    OTHER = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;OTHER&quot;], col = NA))
+)
+
+column_title = &quot;OncoPrint for University of Chicago samples: HR+, HER2+&quot;
+heatmap_legend_param = list(title = &quot;Alterations&quot;, at = c(&quot;CNAGAIN&quot;,&quot;CNALOSS&quot;, &quot;INFRAME&quot;, &quot;MISSENSE&quot;, &quot;PROMOTER&quot;, &quot;TRUNC&quot;, &quot;OTHER&quot;), labels = c(&quot;Copy number gain&quot;, &quot;Copy number loss&quot;,&quot;Insertion/Deletion&quot;, &quot;Missense&quot;, &quot;Splice mutation&quot;, &quot;Nonsense&quot;, &quot;Mutation-Other&quot;))
+oncoPrint(mat,
+    alter_fun = alter_fun,
+    col = col, 
+    column_title = column_title,
+    heatmap_legend_param = heatmap_legend_param,
+    show_pct=FALSE,
+    remove_empty_columns = TRUE,
+    row_names_gp = gpar(fontsize = 10)
+)</code></pre>
+<p><img src="figure/Tempus.Rmd/Oncoprint-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>tempusoncoprintHERpos &lt;- tempusoncoprint %&gt;% filter(subtype==&quot;HER+/HR-&quot;)
+tempusoncoprintHERpos$StudyID=NULL
+tempusoncoprintHERpos$AccessionNo=NULL
+tempusoncoprintHERpos$subtype=NULL
+
+mat = as.matrix(tempusoncoprintHERpos)
+mat[is.na(mat)] = &quot;&quot;
+rownames(mat) = mat[, 1]
+mat = mat[, -1]
+mat=  mat[, -ncol(mat)]
+mat = t(mat)
+
+col = c(&quot;CNAGAIN&quot; = &quot;#009999&quot;, &quot;CNALOSS&quot; = &quot;#CC0066&quot;, &quot;INFRAME&quot; = &quot;#FF8000&quot;, &quot;MISSENSE&quot; = &quot;#0066CC&quot;, &quot;PROMOTER&quot; = &quot;#EFD915&quot;, &quot;TRUNC&quot; = &quot;black&quot;, &quot;OTHER&quot; = &quot;#006600&quot;)
+
+alter_fun = list(
+    CNAGAIN = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;CNAGAIN&quot;], col = NA)),
+    CNALOSS = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;CNALOSS&quot;], col = NA)),
+    INFRAME = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;INFRAME&quot;], col = NA)),
+    MISSENSE = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;MISSENSE&quot;], col = NA)),
+    PROMOTER = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;PROMOTER&quot;], col = NA)),
+    TRUNC = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;TRUNC&quot;], col = NA)),
+    OTHER = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;OTHER&quot;], col = NA))
+)
+
+column_title = &quot;OncoPrint for University of Chicago samples: HR-, HER2+&quot;
+heatmap_legend_param = list(title = &quot;Alterations&quot;, at = c(&quot;CNAGAIN&quot;,&quot;CNALOSS&quot;, &quot;INFRAME&quot;, &quot;MISSENSE&quot;, &quot;PROMOTER&quot;, &quot;TRUNC&quot;, &quot;OTHER&quot;), labels = c(&quot;Copy number gain&quot;, &quot;Copy number loss&quot;,&quot;Insertion/Deletion&quot;, &quot;Missense&quot;, &quot;Splice mutation&quot;, &quot;Nonsense&quot;, &quot;Mutation-Other&quot;))
+oncoPrint(mat,
+    alter_fun = alter_fun,
+    col = col, 
+    column_title = column_title,
+    heatmap_legend_param = heatmap_legend_param,
+    show_pct=FALSE,
+    remove_empty_columns = TRUE,
+    row_names_gp = gpar(fontsize = 10)
+)</code></pre>
+<p><img src="figure/Tempus.Rmd/Oncoprint-3.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>tempusoncoprintTNBC &lt;- tempusoncoprint %&gt;% filter(subtype==&quot;TNBC&quot;)
+tempusoncoprintTNBC$StudyID=NULL
+tempusoncoprintTNBC$AccessionNo=NULL
+tempusoncoprintTNBC$subtype=NULL
+
+mat = as.matrix(tempusoncoprintTNBC)
+mat[is.na(mat)] = &quot;&quot;
+rownames(mat) = mat[, 1]
+mat = mat[, -1]
+mat=  mat[, -ncol(mat)]
+mat = t(mat)
+
+col = c(&quot;CNAGAIN&quot; = &quot;#009999&quot;, &quot;CNALOSS&quot; = &quot;#CC0066&quot;, &quot;INFRAME&quot; = &quot;#FF8000&quot;, &quot;MISSENSE&quot; = &quot;#0066CC&quot;, &quot;PROMOTER&quot; = &quot;#EFD915&quot;, &quot;TRUNC&quot; = &quot;black&quot;, &quot;OTHER&quot; = &quot;#006600&quot;)
+
+alter_fun = list(
+    CNAGAIN = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;CNAGAIN&quot;], col = NA)),
+    CNALOSS = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;CNALOSS&quot;], col = NA)),
+    INFRAME = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;INFRAME&quot;], col = NA)),
+    MISSENSE = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;MISSENSE&quot;], col = NA)),
+    PROMOTER = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;PROMOTER&quot;], col = NA)),
+    TRUNC = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;TRUNC&quot;], col = NA)),
+    OTHER = function(x, y, w, h)
+        grid.rect(x, y, w*1, h*1, 
+            gp = gpar(fill = col[&quot;OTHER&quot;], col = NA))
+)
+
+column_title = &quot;OncoPrint for University of Chicago samples: TNBC&quot;
+heatmap_legend_param = list(title = &quot;Alterations&quot;, at = c(&quot;CNAGAIN&quot;,&quot;CNALOSS&quot;, &quot;INFRAME&quot;, &quot;MISSENSE&quot;, &quot;PROMOTER&quot;, &quot;TRUNC&quot;, &quot;OTHER&quot;), labels = c(&quot;Copy number gain&quot;, &quot;Copy number loss&quot;,&quot;Insertion/Deletion&quot;, &quot;Missense&quot;, &quot;Splice mutation&quot;, &quot;Nonsense&quot;, &quot;Mutation-Other&quot;))
+oncoPrint(mat,
+    alter_fun = alter_fun,
+    col = col, 
+    column_title = column_title,
+    heatmap_legend_param = heatmap_legend_param,
+    show_pct=FALSE,
+    remove_empty_columns = TRUE,
+    row_names_gp = gpar(fontsize = 10)
+)</code></pre>
+<p><img src="figure/Tempus.Rmd/Oncoprint-4.png" width="672" style="display: block; margin: auto;" /></p>
 <pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
   0.000   1.300   2.900   7.562   6.050  76.300 </code></pre>
 <p><img src="figure/Tempus.Rmd/Ongoing%20mutational%20summary-1.png" width="672" style="display: block; margin: auto;" /></p>
@@ -1572,6 +1771,17 @@ Date
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
 <tr>
 <td style="text-align:left;">
 2ecfa66
@@ -1752,10 +1962,13 @@ Sheila Rajagopal
 </table>
 <p></details></p>
 <p>74 patients had “immune profile” data as calculated by Tempus. This represents a derivation from the RNA-seq data that was developed from a machine learning algorithm, NOT a pathology-based assessment. The immune score is a “support vector regression model for the immune cell estimates and formal thresholds for high or low are not in place as of yet.”</p>
+<p>Study IDs MB-0910 and MB-1073 represent patients with metastatic disease. Going forward, we will exclude these patients from the cohort to better gauge the effect of our markers under evaluation on survival and recurrence.</p>
 </div>
 <div id="recurrence-and-survival-by-ethnicity-in-our-cohort-significant" class="section level1">
 <h1>Recurrence and survival by ethnicity in our cohort (significant)</h1>
-<pre class="r"><code>fitsurvival &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$bw, 
+<pre class="r"><code>tempusmergedupclean &lt;- tempusmergedupclean %&gt;% filter(stage14!=4)
+  
+fitsurvival &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$bw, 
                data=tempusmergedupclean)
 ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, title=&quot;Survival of patients by ethnicity&quot;)</code></pre>
 <p><img src="figure/Tempus.Rmd/Ethnicity%20recurrence%20and%20survival-1.png" width="672" style="display: block; margin: auto;" /></p>
@@ -1777,6 +1990,17 @@ Date
 <tbody>
 <tr>
 <td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 2ecfa66
 </td>
 <td style="text-align:left;">
@@ -1791,7 +2015,7 @@ Sheila Rajagopal
 <p></details></p>
 <pre class="r"><code>fitrecurrence &lt;- survfit(Surv(time=tempusmergedupclean$pfstimefu, as.numeric(tempusmergedupclean$pfs)) ~tempusmergedupclean$bw, 
                data=tempusmergedupclean)
-ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table=&quot;percentage&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, ylab=&quot;Recurrence&quot;, title=&quot;Likelihood of recurrence in patients by ethnicity&quot;)</code></pre>
+ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, ylab=&quot;Recurrence&quot;, title=&quot;Progression-free survival in patients by ethnicity&quot;)</code></pre>
 <p><img src="figure/Tempus.Rmd/Ethnicity%20recurrence%20and%20survival-2.png" width="672" style="display: block; margin: auto;" /></p>
 <details> <summary><em>Expand here to see past versions of Ethnicity recurrence and survival-2.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
@@ -1809,6 +2033,17 @@ Date
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
 <tr>
 <td style="text-align:left;">
 2ecfa66
@@ -1829,48 +2064,60 @@ Sheila Rajagopal
 <pre class="r"><code>subtypeHERposHRneg &lt;- tempusmergedupclean %&gt;% filter(subtype==&quot;HER+/HR-&quot;)
 allgenesHERposHRneg &lt;- colSums(!((subtypeHERposHRneg[,105:663])==&quot;&quot;))
 allgenesHERposHRneg[&quot;ERBB2/HER2&quot;] &lt;- sum(allgenesHERposHRneg[&quot;ERBB2&quot;], allgenesHERposHRneg[&quot;ERBB2 (HER2)&quot;], allgenesHERposHRneg[&quot;ERBB2(HER2)&quot;], allgenesHERposHRneg[&quot;ERBB2HER2)&quot;], allgenesHERposHRneg[&quot;HER2&quot;])
-headHERposHRneg &lt;- head(sort(allgenesHERposHRneg, decreasing=TRUE), 10)
+headHERposHRneg &lt;- head(sort(allgenesHERposHRneg, decreasing=TRUE), 20)
 headHERposHRneg</code></pre>
 <pre><code>        TP53        CDK12        ERBB2       PIK3CA ERBB2 (HER2) 
            9            6            6            4            3 
          FLG        KDM6A         MCL1         BCOR          BCR 
-           3            3            3            2            2 </code></pre>
+           3            3            3            2            2 
+        CHD4          CIC         EGFR         IRS2          JUN 
+           2            2            2            2            2 
+       KAT6A         LDLR        MEF2B         MSH6        MUTYH 
+           2            2            2            2            2 </code></pre>
 <pre class="r"><code>subtypeHERnegHRpos &lt;- tempusmergedupclean %&gt;% filter(subtype==&quot;HER-/HR+&quot;)
 allgenesHERnegHRpos &lt;- colSums(!((subtypeHERnegHRpos[,105:663])==&quot;&quot;))
 allgenesHERnegHRpos[&quot;ERBB2/HER2&quot;] &lt;- sum(allgenesHERnegHRpos[&quot;ERBB2&quot;], allgenesHERnegHRpos[&quot;ERBB2 (HER2)&quot;], allgenesHERnegHRpos[&quot;ERBB2(HER2)&quot;], allgenesHERnegHRpos[&quot;ERBB2HER2)&quot;], allgenesHERnegHRpos[&quot;HER2&quot;])
-headHERnegHRpos &lt;- head(sort(allgenesHERnegHRpos, decreasing=TRUE), 10)
+headHERnegHRpos &lt;- head(sort(allgenesHERnegHRpos, decreasing=TRUE), 20)
 headHERnegHRpos</code></pre>
-<pre><code>  MCL1 PIK3CA   TP53  ZFHX3 BCORL1  KMT2B   FAT1  KMT2D    ALK  AMER1 
-    22     21     19     15     14     13     12     12     11     11 </code></pre>
+<pre><code>  MCL1 PIK3CA   TP53  ZFHX3 BCORL1  KMT2B  KMT2D    ALK  AMER1   FAT1 
+    22     20     19     15     14     13     12     11     11     11 
+ KDM5C  LZTR1 NOTCH1    ATM MAP3K1 NOTCH3   SPEN BCL11B   CDH1    CIC 
+    11     11     11     10     10     10     10      9      9      9 </code></pre>
 <pre class="r"><code>subtypeTNBC &lt;- tempusmergedupclean %&gt;% filter(subtype==&quot;TNBC&quot;)
 allgenesTNBC &lt;- colSums(!((subtypeTNBC[,105:663])==&quot;&quot;))
 allgenesTNBC[&quot;ERBB2/HER2&quot;] &lt;- sum(allgenesTNBC[&quot;ERBB2&quot;], allgenesTNBC[&quot;ERBB2 (HER2)&quot;], allgenesTNBC[&quot;ERBB2(HER2)&quot;], allgenesTNBC[&quot;ERBB2HER2)&quot;], allgenesTNBC[&quot;HER2&quot;])
-headTNBC&lt;- head(sort(allgenesTNBC, decreasing=TRUE), 10)
+headTNBC&lt;- head(sort(allgenesTNBC, decreasing=TRUE), 20)
 headTNBC</code></pre>
 <pre><code>  TP53   MCL1 NOTCH1    FLG  KMT2C    MYC  AMER1   CDK4 CDKN1B DNMT3A 
-    25      8      7      5      5      5      4      4      4      4 </code></pre>
+    25      8      7      5      5      5      4      4      4      4 
+  ETV6   FAT1   KRAS  LRP1B   MSH2   PTEN   TSC2  ZFHX3    ALK     AR 
+     4      4      4      4      4      4      4      4      3      3 </code></pre>
 <pre class="r"><code>subtypeHERposHRpos &lt;- tempusmergedupclean %&gt;% filter(subtype==&quot;HER+/HR+&quot;)
 allgenesHERposHRpos &lt;- colSums(!((subtypeHERposHRpos[,105:663])==&quot;&quot;))
 allgenesHERposHRpos[&quot;ERBB2/HER2&quot;] &lt;- sum(allgenesHERposHRpos[&quot;ERBB2&quot;], allgenesHERposHRpos[&quot;ERBB2 (HER2)&quot;], allgenesHERposHRpos[&quot;ERBB2(HER2)&quot;], allgenesHERposHRpos[&quot;ERBB2HER2)&quot;], allgenesHERposHRpos[&quot;HER2&quot;])
-headHERposHRpos &lt;- head(sort(allgenesHERposHRpos, decreasing=TRUE), 10)
+headHERposHRpos &lt;- head(sort(allgenesHERposHRpos, decreasing=TRUE), 20)
 headHERposHRpos</code></pre>
 <pre><code>        TP53       PIK3CA ERBB2 (HER2)          ATM         MCL1 
           17           10            9            8            8 
        CDK12         RARA        AMER1        HNF1B         MDM2 
-           7            7            6            6            6 </code></pre>
+           7            7            6            6            6 
+      BCL11B         CDK4          FLG        GATA3          MYC 
+           5            5            5            5            5 
+        NRG1       BCORL1        BRCA1         CDH1         CTCF 
+           5            4            4            4            4 </code></pre>
 <pre class="r"><code>chisq.test(headHERnegHRpos, headHERposHRneg, headTNBC, headHERposHRpos)</code></pre>
 <pre><code>
     Pearson&#39;s Chi-squared test
 
 data:  headHERnegHRpos and headHERposHRneg
-X-squared = 40, df = 28, p-value = 0.06613</code></pre>
+X-squared = 74.444, df = 36, p-value = 0.0001725</code></pre>
 <pre class="r"><code>subtypewhite &lt;- tempusmergedupclean %&gt;% filter(race==&quot;White&quot;)
 allgeneswhite&lt;- colSums(!((subtypewhite[,105:663])==&quot;&quot;))
 allgeneswhite[&quot;ERBB2/HER2&quot;] &lt;- sum(allgeneswhite[&quot;ERBB2&quot;], allgeneswhite[&quot;ERBB2 (HER2)&quot;], allgeneswhite[&quot;ERBB2(HER2)&quot;], allgeneswhite[&quot;ERBB2HER2)&quot;], allgeneswhite[&quot;HER2&quot;])
 headwhite &lt;- head(sort(allgeneswhite, decreasing=TRUE), 5)
 headwhite</code></pre>
-<pre><code>  TP53   MCL1 PIK3CA BCORL1   FAT1 
-    32     25     20     13     13 </code></pre>
+<pre><code>  TP53   MCL1 PIK3CA BCORL1  KDM5C 
+    32     25     19     13     13 </code></pre>
 <pre class="r"><code>subtypeblack &lt;- tempusmergedupclean %&gt;% filter(race==&quot;Black&quot;)
 allgenesblack&lt;- colSums(!((subtypeblack[,105:663])==&quot;&quot;))
 allgenesblack[&quot;ERBB2/HER2&quot;] &lt;- sum(allgenesblack[&quot;ERBB2&quot;], allgenesblack[&quot;ERBB2 (HER2)&quot;], allgenesblack[&quot;ERBB2(HER2)&quot;], allgenesblack[&quot;ERBB2HER2)&quot;], allgenesblack[&quot;HER2&quot;])
@@ -1910,6 +2157,17 @@ Date
 <tbody>
 <tr>
 <td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 2ecfa66
 </td>
 <td style="text-align:left;">
@@ -1942,6 +2200,17 @@ Date
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
 <tr>
 <td style="text-align:left;">
 2ecfa66
@@ -1979,6 +2248,17 @@ Date
 <tbody>
 <tr>
 <td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 2ecfa66
 </td>
 <td style="text-align:left;">
@@ -2013,6 +2293,17 @@ Date
 <tbody>
 <tr>
 <td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 2ecfa66
 </td>
 <td style="text-align:left;">
@@ -2025,7 +2316,8 @@ Sheila Rajagopal
 </tbody>
 </table>
 <p></details></p>
-<pre class="r"><code>tempusmergedupclean$ARYN &lt;- ifelse (tempusmergedupclean$AR==&quot;&quot;, 0, 1)
+<pre class="r"><code>#AR receptor status
+tempusmergedupclean$ARYN &lt;- ifelse (tempusmergedupclean$AR==&quot;&quot;, 0, 1)
 
 fitsurvival &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$ARYN, 
                data=tempusmergedupclean)
@@ -2047,6 +2339,17 @@ Date
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
 <tr>
 <td style="text-align:left;">
 2ecfa66
@@ -2083,6 +2386,17 @@ Date
 <tbody>
 <tr>
 <td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 2ecfa66
 </td>
 <td style="text-align:left;">
@@ -2095,7 +2409,8 @@ Sheila Rajagopal
 </tbody>
 </table>
 <p></details></p>
-<pre class="r"><code>tempusmergedupclean$PIK3CAYN &lt;- ifelse (tempusmergedupclean$PIK3CA==&quot;&quot;, 0, 1)
+<pre class="r"><code>#PIK3CA mutation status
+tempusmergedupclean$PIK3CAYN &lt;- ifelse (tempusmergedupclean$PIK3CA==&quot;&quot;, 0, 1)
 
 fitsurvival &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$PIK3CAYN, 
                data=tempusmergedupclean)
@@ -2117,6 +2432,17 @@ Date
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
 <tr>
 <td style="text-align:left;">
 2ecfa66
@@ -2153,6 +2479,17 @@ Date
 <tbody>
 <tr>
 <td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 2ecfa66
 </td>
 <td style="text-align:left;">
@@ -2165,16 +2502,77 @@ Sheila Rajagopal
 </tbody>
 </table>
 <p></details></p>
-<pre class="r"><code>tempusmergedupclean$ATMYN &lt;- ifelse (tempusmergedupclean$ATM==&quot;&quot;, 0, 1)
+<pre class="r"><code>#ATM mutation status
+tempusmergedupclean$ATMYN &lt;- ifelse (tempusmergedupclean$ATM==&quot;&quot;, 0, 1)
 
 fitsurvival &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$ATMYN, 
                data=tempusmergedupclean)
 ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, title=&quot;Survival of patients by ATM mutation status&quot;)</code></pre>
 <p><img src="figure/Tempus.Rmd/Outcomes%20by%20mutation%20status-9.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of Outcomes by mutation status-9.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <pre class="r"><code>fitrecurrence &lt;- survfit(Surv(time=tempusmergedupclean$pfstimefu, as.numeric(tempusmergedupclean$pfs)) ~tempusmergedupclean$ATMYN, 
                data=tempusmergedupclean)
 ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, ylab=&quot;Recurrence&quot;, title=&quot;Likelihood of recurrence in patients by ATM mutation status&quot;)</code></pre>
 <p><img src="figure/Tempus.Rmd/Outcomes%20by%20mutation%20status-10.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of Outcomes by mutation status-10.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 </div>
 <div id="immune-profile-data-and-association-with-survival-and-recurrence-tmb-trends-with-recurrence" class="section level1">
 <h1>Immune profile data and association with survival and recurrence (TMB trends with recurrence)</h1>
@@ -2185,12 +2583,12 @@ Chi-squared approximation may be incorrect</code></pre>
     Pearson&#39;s Chi-squared test
 
 data:  tempusmergedupclean$neoadj and tempusmergedupclean$TMB
-X-squared = 27.528, df = 27, p-value = 0.4356</code></pre>
-<pre class="r"><code>tempusmergedupclean$TMBhighlow &lt;- ifelse(tempusmergedupclean$TMB&gt;20, 1, 0)
+X-squared = 27.692, df = 27, p-value = 0.427</code></pre>
+<pre class="r"><code>tempusmergedupclean$TMBhighlow &lt;- ifelse(tempusmergedupclean$TMB&gt;9, 1, 0)
   
 fitsurvival &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$TMBhighlow, 
                data=tempusmergedupclean)
-ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, title=&quot;Survival of patients by TMB mutation status (high&gt;20 m/MB)&quot;)</code></pre>
+ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, title=&quot;Survival of patients by TMB mutation status (high&gt;9 m/MB)&quot;)</code></pre>
 <p><img src="figure/Tempus.Rmd/Immune%20profile%20recurrence%20and%20survival-1.png" width="672" style="display: block; margin: auto;" /></p>
 <details> <summary><em>Expand here to see past versions of Immune profile recurrence and survival-1.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
@@ -2210,6 +2608,17 @@ Date
 <tbody>
 <tr>
 <td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 2ecfa66
 </td>
 <td style="text-align:left;">
@@ -2224,7 +2633,7 @@ Sheila Rajagopal
 <p></details></p>
 <pre class="r"><code>fitrecurrence &lt;- survfit(Surv(time=tempusmergedupclean$pfstimefu, as.numeric(tempusmergedupclean$pfs)) ~tempusmergedupclean$TMBhighlow, 
                data=tempusmergedupclean)
-ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, ylab=&quot;Recurrence&quot;, title=&quot;Likelihood of recurrence in patients by TMB (high&gt;20 m/mB)&quot;)</code></pre>
+ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, ylab=&quot;Recurrence&quot;, title=&quot;Progression-free survival in patients by TMB (high&gt;9 m/mB)&quot;)</code></pre>
 <p><img src="figure/Tempus.Rmd/Immune%20profile%20recurrence%20and%20survival-2.png" width="672" style="display: block; margin: auto;" /></p>
 <details> <summary><em>Expand here to see past versions of Immune profile recurrence and survival-2.png:</em></summary>
 <table style="border-collapse:separate; border-spacing:5px;">
@@ -2242,6 +2651,17 @@ Date
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
 <tr>
 <td style="text-align:left;">
 2ecfa66
@@ -2284,6 +2704,17 @@ Date
 <tbody>
 <tr>
 <td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 2ecfa66
 </td>
 <td style="text-align:left;">
@@ -2318,6 +2749,17 @@ Date
 <tbody>
 <tr>
 <td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 2ecfa66
 </td>
 <td style="text-align:left;">
@@ -2330,6 +2772,12 @@ Sheila Rajagopal
 </tbody>
 </table>
 <p></details></p>
+<pre class="r"><code>chisq.test(tempusmergedupclean$stage14, tempusmergedupclean$TMBhighlow)</code></pre>
+<pre><code>
+    Pearson&#39;s Chi-squared test
+
+data:  tempusmergedupclean$stage14 and tempusmergedupclean$TMBhighlow
+X-squared = 7.1218, df = 2, p-value = 0.02841</code></pre>
 <pre class="r"><code>tempusmergedupclean$immunemedian &lt;- ifelse(tempusmergedupclean$immune&gt;0.12, 1, 0)
 
 fitsurvival &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$immunemedian, 
@@ -2354,6 +2802,17 @@ Date
 <tbody>
 <tr>
 <td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 2ecfa66
 </td>
 <td style="text-align:left;">
@@ -2370,56 +2829,386 @@ Sheila Rajagopal
                data=tempusmergedupclean)
 ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, ylab=&quot;Recurrence&quot;, title=&quot;Likelihood of recurrence in patients by immune score greater or less than the median&quot;)</code></pre>
 <p><img src="figure/Tempus.Rmd/Immune%20profile%20recurrence%20and%20survival-6.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of Immune profile recurrence and survival-6.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <pre class="r"><code>tempusmergedupclean$bmedian &lt;- ifelse(tempusmergedupclean$b&gt;0.10, 1, 0)
 
 fitsurvival &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$bmedian, 
                data=tempusmergedupclean)
 ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, title=&quot;Survival of patients by % b cell infiltrate greater or less than the median&quot;)</code></pre>
 <p><img src="figure/Tempus.Rmd/Immune%20profile%20recurrence%20and%20survival-7.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of Immune profile recurrence and survival-7.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <pre class="r"><code>fitrecurrence &lt;- survfit(Surv(time=tempusmergedupclean$pfstimefu, as.numeric(tempusmergedupclean$pfs)) ~tempusmergedupclean$bmedian, 
                data=tempusmergedupclean)
 ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, ylab=&quot;Recurrence&quot;, title=&quot;Likelihood of recurrence in patients by % b cell infiltrate greater or less than the median&quot;)</code></pre>
 <p><img src="figure/Tempus.Rmd/Immune%20profile%20recurrence%20and%20survival-8.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of Immune profile recurrence and survival-8.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <pre class="r"><code>tempusmergedupclean$cd4median &lt;- ifelse(tempusmergedupclean$cd4&gt;0.27, 1, 0)
 
 fitsurvival &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$cd4median, 
                data=tempusmergedupclean)
 ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, title=&quot;Survival of patients by % cd4 cell infiltrate greater or less than the median&quot;)</code></pre>
 <p><img src="figure/Tempus.Rmd/Immune%20profile%20recurrence%20and%20survival-9.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of Immune profile recurrence and survival-9.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <pre class="r"><code>fitrecurrence &lt;- survfit(Surv(time=tempusmergedupclean$pfstimefu, as.numeric(tempusmergedupclean$pfs)) ~tempusmergedupclean$cd4median, 
                data=tempusmergedupclean)
 ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, ylab=&quot;Recurrence&quot;, title=&quot;Likelihood of recurrence in patients by % cd4 cell infiltrate greater or less than the median&quot;)</code></pre>
 <p><img src="figure/Tempus.Rmd/Immune%20profile%20recurrence%20and%20survival-10.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of Immune profile recurrence and survival-10.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <pre class="r"><code>tempusmergedupclean$cd8median &lt;- ifelse(tempusmergedupclean$cd8&gt;0.13, 1, 0)
 
 fitsurvival &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$cd8median, 
                data=tempusmergedupclean)
 ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, title=&quot;Survival of patients by % cd8 cell infiltrate greater or less than the median&quot;)</code></pre>
 <p><img src="figure/Tempus.Rmd/Immune%20profile%20recurrence%20and%20survival-11.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of Immune profile recurrence and survival-11.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <pre class="r"><code>fitrecurrence &lt;- survfit(Surv(time=tempusmergedupclean$pfstimefu, as.numeric(tempusmergedupclean$pfs)) ~tempusmergedupclean$cd8median, 
                data=tempusmergedupclean)
 ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, ylab=&quot;Recurrence&quot;, title=&quot;Likelihood of recurrence in patients by % cd8 cell infiltrate greater or less than the median&quot;)</code></pre>
 <p><img src="figure/Tempus.Rmd/Immune%20profile%20recurrence%20and%20survival-12.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of Immune profile recurrence and survival-12.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <pre class="r"><code>tempusmergedupclean$macmedian &lt;- ifelse(tempusmergedupclean$mac&gt;0.37, 1, 0)
 
 fitsurvival &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$macmedian, 
                data=tempusmergedupclean)
 ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, title=&quot;Survival of patients by % macrophage cell infiltrate greater or less than the median&quot;)</code></pre>
 <p><img src="figure/Tempus.Rmd/Immune%20profile%20recurrence%20and%20survival-13.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of Immune profile recurrence and survival-13.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <pre class="r"><code>fitrecurrence &lt;- survfit(Surv(time=tempusmergedupclean$pfstimefu, as.numeric(tempusmergedupclean$pfs)) ~tempusmergedupclean$macmedian, 
                data=tempusmergedupclean)
 ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, ylab=&quot;Recurrence&quot;, title=&quot;Likelihood of recurrence in patients by % macrophage infiltrate greater or less than the median&quot;)</code></pre>
 <p><img src="figure/Tempus.Rmd/Immune%20profile%20recurrence%20and%20survival-14.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of Immune profile recurrence and survival-14.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <pre class="r"><code>tempusmergedupclean$nkmedian &lt;- ifelse(tempusmergedupclean$nk&gt;0.092, 1, 0)
 
 fitsurvival &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$nkmedian, 
                data=tempusmergedupclean)
 ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, title=&quot;Survival of patients by % NK cell infiltrate greater or less than the median&quot;)</code></pre>
 <p><img src="figure/Tempus.Rmd/Immune%20profile%20recurrence%20and%20survival-15.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of Immune profile recurrence and survival-15.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <pre class="r"><code>fitrecurrence &lt;- survfit(Surv(time=tempusmergedupclean$pfstimefu, as.numeric(tempusmergedupclean$pfs)) ~tempusmergedupclean$nkmedian,
                data=tempusmergedupclean)
 ggsurvplot(fitrecurrence, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, ylab=&quot;Recurrence&quot;, title=&quot;Likelihood of recurrence in patients by % NK cell infiltrate greater or less than the median&quot;)</code></pre>
 <p><img src="figure/Tempus.Rmd/Immune%20profile%20recurrence%20and%20survival-16.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of Immune profile recurrence and survival-16.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <pre class="r"><code>surv_object &lt;- Surv(time=tempusmergedupclean$timefu, event=as.numeric(tempusmergedupclean$vitalstatussurv))
      
 fit.coxph &lt;- coxph(surv_object ~ tempusmergedupclean$TMBhighlow + tempusmergedupclean$immunemedian + tempusmergedupclean$bmedian + tempusmergedupclean$cd4median + tempusmergedupclean$cd8median + tempusmergedupclean$macmedian + tempusmergedupclean$nkmedian,
@@ -2427,6 +3216,36 @@ fit.coxph &lt;- coxph(surv_object ~ tempusmergedupclean$TMBhighlow + tempusmerge
                    
 ggforest(fit.coxph, data = tempusmergedupclean, main=&quot;Comparative hazard ratios of immune measurements in patient tumors&quot;)</code></pre>
 <p><img src="figure/Tempus.Rmd/Immune%20profile%20recurrence%20and%20survival-17.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of Immune profile recurrence and survival-17.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <pre class="r"><code>rec_object &lt;- Surv(time=tempusmergedupclean$pfstimefu, event=as.numeric(tempusmergedupclean$pfs))
      
 fit.coxph2 &lt;- coxph(rec_object ~ tempusmergedupclean$TMBhighlow + tempusmergedupclean$immunemedian + tempusmergedupclean$bmedian + tempusmergedupclean$cd4median + tempusmergedupclean$cd8median + tempusmergedupclean$macmedian + tempusmergedupclean$nkmedian,
@@ -2434,62 +3253,129 @@ fit.coxph2 &lt;- coxph(rec_object ~ tempusmergedupclean$TMBhighlow + tempusmerge
                    
 ggforest(fit.coxph2, data = tempusmergedupclean, main=&quot;Comparative hazard ratios of immune measurements in patient tumors&quot;)</code></pre>
 <p><img src="figure/Tempus.Rmd/Immune%20profile%20recurrence%20and%20survival-18.png" width="672" style="display: block; margin: auto;" /></p>
+<details> <summary><em>Expand here to see past versions of Immune profile recurrence and survival-18.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
 <p>Neoadjuvant chemotherapy treatment status was not associated with a change in tumor mutational burden. Based on Chalmers et al (<a href="https://genomemedicine.biomedcentral.com/track/pdf/10.1186/s13073-017-0424-2?site=genomemedicine.biomedcentral.com" class="uri">https://genomemedicine.biomedcentral.com/track/pdf/10.1186/s13073-017-0424-2?site=genomemedicine.biomedcentral.com</a>), we defined a high TMB as &gt;20. We saw a nonsignificant trend towards increased mutational burden and immune infiltrate being associated with reduced likelihood of recurrence in these patients.</p>
 <pre class="r"><code>tempusmergedupclean$CDKpathYN &lt;- ifelse (tempusmergedupclean$CDK4==&quot;&quot; &amp; tempusmergedupclean$CCND1==&quot;&quot; &amp; tempusmergedupclean$CDKN2A==&quot;&quot; &amp; tempusmergedupclean$CDK6==&quot;&quot; &amp; tempusmergedupclean$RB1==&quot;&quot; &amp; tempusmergedupclean$FAT1==&quot;&quot;, 0, 1)
 
-fitsurvival &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$CDKpathYN+tempusmergedupclean$subtype, 
-               data=tempusmergedupclean)
-ggsurvplot(fitsurvival, data=tempusmergedupclean, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, title=&quot;Survival of patients by CDK pathway mutation status&quot;)</code></pre>
+subtypeHERnegHRpos$CDKsens &lt;- ifelse(grepl(&quot;gain&quot;, as.character(subtypeHERnegHRpos$CDK4[1:51])), 1, 0)
+subtypeHERnegHRpos$CDKsens &lt;- ifelse(grepl(&quot;gain&quot;, as.character(subtypeHERnegHRpos$CCND1[1:51])), 1, subtypeHERnegHRpos$CDKsens)
+subtypeHERnegHRpos$CDKsens &lt;- ifelse(grepl(&quot;loss&quot;, as.character(subtypeHERnegHRpos$CDKN2A[1:51])), 1, subtypeHERnegHRpos$CDKsens)
+
+subtypeHERnegHRpos$CDKres &lt;- ifelse(grepl(&quot;loss&quot;, as.character(subtypeHERnegHRpos$RB1[1:51])), 1, 0)
+subtypeHERnegHRpos$CDKres &lt;- ifelse(grepl(&quot;gain&quot;, as.character(subtypeHERnegHRpos$CDK6[1:51])), 1, subtypeHERnegHRpos$CDKres)
+subtypeHERnegHRpos$CDKres &lt;- ifelse(grepl(&quot;gain&quot;, as.character(subtypeHERnegHRpos$FAT1[1:51])), 1, subtypeHERnegHRpos$CDKres)
+
+fitsurvival &lt;- survfit(Surv(time=subtypeHERnegHRpos$timefu, as.numeric(subtypeHERnegHRpos$vitalstatussurv)) ~subtypeHERnegHRpos$CDKsens, 
+               data=subtypeHERnegHRpos)
+ggsurvplot(fitsurvival, data=subtypeHERnegHRpos, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, title=&quot;Survival of HR+, HER2- patients by CDK mutation sensitivity&quot;)</code></pre>
 <p><img src="figure/Tempus.Rmd/CDK%20pathway%20status-1.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>fitrecurrence &lt;- survfit(Surv(time=tempusmergedupclean$pfstimefu, as.numeric(tempusmergedupclean$pfs)) ~tempusmergedupclean$CDKpathYN+tempusmergedupclean$subtype, 
-               data=tempusmergedupclean)
-ggsurvplot(fitrecurrence, data=tempusmergedupclean, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, ylab=&quot;Recurrence&quot;, title=&quot;Likelihood of recurrence in patients by CDK pathway mutation status&quot;)</code></pre>
+<details> <summary><em>Expand here to see past versions of CDK pathway status-1.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
+<pre class="r"><code>fitrecurrence &lt;- survfit(Surv(time=subtypeHERnegHRpos$pfstimefu, as.numeric(subtypeHERnegHRpos$pfs)) ~subtypeHERnegHRpos$CDKsens,
+               data=subtypeHERnegHRpos)
+ggsurvplot(fitrecurrence, data=subtypeHERnegHRpos, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, ylab=&quot;Recurrence&quot;, title=&quot;Progression-free survival of HR+, HER2- patients by CDK mutation sensitivity&quot;)</code></pre>
 <p><img src="figure/Tempus.Rmd/CDK%20pathway%20status-2.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>table(tempusmergedupclean %&gt;% filter(tempusmergedupclean$CDK4!=&quot;&quot;) %&gt;% select(subtype))</code></pre>
-<pre><code>
-HER-/HR+ HER+/HR+     TNBC 
-       6        5        4 </code></pre>
-<pre class="r"><code>table(tempusmergedupclean %&gt;% filter(tempusmergedupclean$CCND1!=&quot;&quot;) %&gt;% select(subtype))</code></pre>
-<pre><code>
-HER-/HR+ HER+/HR+ 
-       6        2 </code></pre>
-<pre class="r"><code>table(tempusmergedupclean %&gt;% filter(tempusmergedupclean$CDKN2A!=&quot;&quot;) %&gt;% select(subtype))</code></pre>
-<pre><code>
-HER-/HR+ HER+/HR+     TNBC 
-       4        2        1 </code></pre>
-<pre class="r"><code>table(tempusmergedupclean %&gt;% filter(tempusmergedupclean$CDK6!=&quot;&quot;) %&gt;% select(subtype))</code></pre>
-<pre><code>
-HER-/HR+     TNBC 
-       1        1 </code></pre>
-<pre class="r"><code>table(tempusmergedupclean %&gt;% filter(tempusmergedupclean$RB1!=&quot;&quot;) %&gt;% select(subtype))</code></pre>
-<pre><code>
-HER-/HR+ HER+/HR- HER+/HR+     TNBC 
-       3        2        1        1 </code></pre>
-<pre class="r"><code>table(tempusmergedupclean %&gt;% filter(tempusmergedupclean$FAT1!=&quot;&quot;) %&gt;% select(subtype))</code></pre>
-<pre><code>
-HER-/HR+ HER+/HR- HER+/HR+     TNBC 
-      12        1        4        4 </code></pre>
-<pre class="r"><code>chisq.test(tempusmergedupclean$CDKpathYN, tempusmergedupclean$bw)</code></pre>
-<pre><code>
-    Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
+<details> <summary><em>Expand here to see past versions of CDK pathway status-2.png:</em></summary>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+</tbody>
+</table>
+<p></details></p>
+<pre class="r"><code>fitsurvival &lt;- survfit(Surv(time=subtypeHERnegHRpos$timefu, as.numeric(subtypeHERnegHRpos$vitalstatussurv)) ~subtypeHERnegHRpos$CDKres, 
+               data=subtypeHERnegHRpos)
+ggsurvplot(fitsurvival, data=subtypeHERnegHRpos, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, title=&quot;Survival of HR+, HER2- patients by CDK mutation resistance&quot;)</code></pre>
+<p><img src="figure/Tempus.Rmd/CDK%20pathway%20status-3.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>fitrecurrence &lt;- survfit(Surv(time=subtypeHERnegHRpos$pfstimefu, as.numeric(subtypeHERnegHRpos$pfs)) ~subtypeHERnegHRpos$CDKres,
+               data=subtypeHERnegHRpos)
+ggsurvplot(fitrecurrence, data=subtypeHERnegHRpos, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, ylab=&quot;Recurrence&quot;, title=&quot;Recurrence likelihood of HR+, HER2- patients by CDK mutation sensitivity&quot;)</code></pre>
+<p><img src="figure/Tempus.Rmd/CDK%20pathway%20status-4.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>tempusmergedupclean$HRDpathYN &lt;- ifelse (tempusmergedupclean$BRCA1==&quot;&quot; &amp; tempusmergedupclean$BRCA2==&quot;&quot; &amp; tempusmergedupclean$RAD51C==&quot;&quot; &amp; tempusmergedupclean$RAD51D==&quot;&quot; &amp; tempusmergedupclean$RAD50==&quot;&quot; &amp; tempusmergedupclean$BRIP1==&quot;&quot; &amp; tempusmergedupclean$BARD1==&quot;&quot; &amp; tempusmergedupclean$CHEK2==&quot;&quot; &amp; tempusmergedupclean$MRE11==&quot;&quot;  &amp; tempusmergedupclean$PALB2==&quot;&quot; &amp; tempusmergedupclean$MLH1==&quot;&quot; &amp; tempusmergedupclean$MSH2==&quot;&quot;  &amp; tempusmergedupclean$MSH6==&quot;&quot; &amp; tempusmergedupclean$PMS2==&quot;&quot;, 0, 1)
 
-data:  tempusmergedupclean$CDKpathYN and tempusmergedupclean$bw
-X-squared = 0.00051676, df = 1, p-value = 0.9819</code></pre>
-<pre class="r"><code>chisq.test(tempusmergedupclean$CDKpathYN, tempusmergedupclean$TMB)</code></pre>
-<pre><code>Warning in chisq.test(tempusmergedupclean$CDKpathYN,
-tempusmergedupclean$TMB): Chi-squared approximation may be incorrect</code></pre>
-<pre><code>
-    Pearson&#39;s Chi-squared test
-
-data:  tempusmergedupclean$CDKpathYN and tempusmergedupclean$TMB
-X-squared = 48.635, df = 37, p-value = 0.09545</code></pre>
-<pre class="r"><code>chisq.test(tempusmergedupclean$CDKpathYN, tempusmergedupclean$BRCAYN)</code></pre>
-<pre><code>
-    Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
-
-data:  tempusmergedupclean$CDKpathYN and tempusmergedupclean$BRCAYN
-X-squared = 2.3723, df = 1, p-value = 0.1235</code></pre>
-<p>Mutations in the CDK pathway are associated with survival (significant) and have a trend towards significance in recurrence in patients with TNBC and HER-, HR+ disease. There was no specific association with ethnicity nor an association with mutational burden/BRCA status.</p>
+fitsurvival &lt;- survfit(Surv(time=tempusmergedupclean$timefu, as.numeric(tempusmergedupclean$vitalstatussurv)) ~tempusmergedupclean$HRDpathYN, 
+               data=tempusmergedupclean)
+ggsurvplot(fitsurvival, data=tempusmergedupclean, risk.table=&quot;absolute&quot;, pval=TRUE, xlab = &quot;Time in years&quot;, xlim=c(0, 10), break.time.by=1, title=&quot;Survival of patients by HRD mutation pathway status&quot;)</code></pre>
+<p><img src="figure/Tempus.Rmd/CDK%20pathway%20status-5.png" width="672" style="display: block; margin: auto;" /> Mutations in the CDK pathway are associated with survival (significant) and have a trend towards significance in recurrence in patients with TNBC and HER-, HR+ disease. There was no specific association with ethnicity nor an association with mutational burden/BRCA status.</p>
 </div>
 <div id="her2-rna-correlation-with-mutation-status" class="section level1">
 <h1>HER2 RNA correlation with mutation status</h1>
@@ -2575,6 +3461,17 @@ Date
 <tbody>
 <tr>
 <td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 2ecfa66
 </td>
 <td style="text-align:left;">
@@ -2618,6 +3515,17 @@ Date
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align:left;">
+885580a
+</td>
+<td style="text-align:left;">
+Sheila Rajagopal
+</td>
+<td style="text-align:left;">
+2019-05-28
+</td>
+</tr>
 <tr>
 <td style="text-align:left;">
 2ecfa66
@@ -2684,33 +3592,36 @@ locale:
 [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
 
 attached base packages:
-[1] stats     graphics  grDevices utils     datasets  methods   base     
+[1] grid      stats     graphics  grDevices utils     datasets  methods  
+[8] base     
 
 other attached packages:
- [1] bindrcpp_0.2.2  stringr_1.3.1   survminer_0.4.3 ggpubr_0.2     
- [5] magrittr_1.5    survival_2.43-3 ggplot2_3.1.0   knitr_1.21     
- [9] dplyr_0.7.8     tidyr_0.8.2    
+ [1] bindrcpp_0.2.2        ComplexHeatmap_1.20.0 stringr_1.3.1        
+ [4] survminer_0.4.3       ggpubr_0.2            magrittr_1.5         
+ [7] survival_2.43-3       ggplot2_3.1.0         knitr_1.21           
+[10] dplyr_0.7.8           tidyr_0.8.2          
 
 loaded via a namespace (and not attached):
- [1] zoo_1.8-4         tidyselect_0.2.5  xfun_0.4         
- [4] purrr_0.2.5       splines_3.5.0     lattice_0.20-38  
- [7] colorspace_1.4-0  generics_0.0.2    htmltools_0.3.6  
-[10] yaml_2.2.0        survMisc_0.5.5    rlang_0.3.1      
-[13] R.oo_1.22.0       pillar_1.3.1      glue_1.3.0       
-[16] withr_2.1.2       R.utils_2.7.0     bindr_0.1.1      
-[19] plyr_1.8.4        munsell_0.5.0     gtable_0.2.0     
-[22] workflowr_1.1.1   R.methodsS3_1.7.1 evaluate_0.12    
-[25] labeling_0.3      highr_0.7         broom_0.5.1      
-[28] Rcpp_1.0.0        xtable_1.8-3      scales_1.0.0     
-[31] backports_1.1.3   jsonlite_1.6      cmprsk_2.2-7     
-[34] km.ci_0.5-2       gridExtra_2.3     digest_0.6.18    
-[37] stringi_1.2.4     KMsurv_0.1-5      cowplot_0.9.4    
-[40] grid_3.5.0        rprojroot_1.3-2   tools_3.5.0      
-[43] lazyeval_0.2.1    tibble_2.0.1      crayon_1.3.4     
-[46] whisker_0.3-2     pkgconfig_2.0.2   Matrix_1.2-15    
-[49] data.table_1.12.0 assertthat_0.2.0  rmarkdown_1.11   
-[52] R6_2.3.0          nlme_3.1-137      git2r_0.24.0     
-[55] compiler_3.5.0   </code></pre>
+ [1] shape_1.4.4         circlize_0.4.5      GetoptLong_0.1.7   
+ [4] zoo_1.8-4           tidyselect_0.2.5    xfun_0.4           
+ [7] purrr_0.2.5         splines_3.5.0       lattice_0.20-38    
+[10] colorspace_1.4-0    generics_0.0.2      htmltools_0.3.6    
+[13] yaml_2.2.0          survMisc_0.5.5      rlang_0.3.1        
+[16] R.oo_1.22.0         pillar_1.3.1        glue_1.3.0         
+[19] withr_2.1.2         R.utils_2.7.0       RColorBrewer_1.1-2 
+[22] bindr_0.1.1         plyr_1.8.4          munsell_0.5.0      
+[25] gtable_0.2.0        workflowr_1.1.1     R.methodsS3_1.7.1  
+[28] GlobalOptions_0.1.0 evaluate_0.12       labeling_0.3       
+[31] highr_0.7           broom_0.5.1         Rcpp_1.0.0         
+[34] xtable_1.8-3        scales_1.0.0        backports_1.1.3    
+[37] jsonlite_1.6        cmprsk_2.2-7        km.ci_0.5-2        
+[40] gridExtra_2.3       rjson_0.2.20        digest_0.6.18      
+[43] stringi_1.2.4       KMsurv_0.1-5        cowplot_0.9.4      
+[46] rprojroot_1.3-2     tools_3.5.0         lazyeval_0.2.1     
+[49] tibble_2.0.1        crayon_1.3.4        whisker_0.3-2      
+[52] pkgconfig_2.0.2     Matrix_1.2-15       data.table_1.12.0  
+[55] assertthat_0.2.0    rmarkdown_1.11      R6_2.3.0           
+[58] nlme_3.1-137        git2r_0.24.0        compiler_3.5.0     </code></pre>
 </div>
 </div>
 
